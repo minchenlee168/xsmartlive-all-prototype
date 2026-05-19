@@ -89,7 +89,6 @@ const groupSubtotal = (g: Group) => g.items.reduce((s, i) => s + i.price * i.qty
 
 // Form state
 const couponCode = ref('')
-const couponApplied = ref(true)
 const invoiceCarrierType = ref('member-email')
 const invoiceEmail = ref('abc@gmail.com')
 
