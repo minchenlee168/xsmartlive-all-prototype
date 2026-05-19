@@ -1,0 +1,59 @@
+@import "tailwindcss";
+@import "primeicons/primeicons.css";
+
+* {
+  font-family: "Noto Sans TC", sans-serif;
+}
+
+:root {
+  /* 主色（純色）：用於文字、border、icon、spinner */
+  --primary:           #7C3AED;
+  --primary-200:       #c4b5fd;
+  /* 主色（背景）：可為漸層，用於 button/tab/badge 背景 */
+  --primary-bg:        #7C3AED;
+  --primary-hover-bg:  #6d28d9;
+  --tabs-bg:           #7C3AED;
+
+  /* Reserved brand color — used by category tabs, search button and custom
+     icons. Defaults to --primary; a theme may override it to keep these
+     elements a fixed hue while --primary drives everything else. */
+  --brand:             var(--primary);
+  --brand-bg:          var(--primary-bg);
+  --brand-hover-bg:    var(--primary-hover-bg);
+
+  --page-bg:     #f1f5f9;
+  --surface-100: #f1f5f9;
+  --surface-700: #334155;
+  --surface-950: #020617;
+  --rose-500:    #f43f5e;
+  --border-color:  #e5e5e5;
+  --border-light:  #e2e8f0;
+  --text-muted:    #64748b;
+
+  /* Custom icon shades — derived from --brand so icons keep the reserved
+     brand hue. For normal themes --brand === --primary. */
+  --icon-primary:        var(--brand);
+  --icon-primary-strong: color-mix(in srgb, var(--brand) 50%, #000);
+  --icon-primary-mid:    color-mix(in srgb, var(--brand) 78%, #fff);
+  --icon-primary-soft:   color-mix(in srgb, var(--brand) 45%, #fff);
+  --icon-primary-light:  color-mix(in srgb, var(--brand) 35%, #fff);
+  --icon-primary-bg:     color-mix(in srgb, var(--brand) 6%, #fff);
+
+  /* Light purple surface tint (cards/tags/active states) — tracks theme */
+  --primary-surface:     color-mix(in srgb, var(--primary) 12%, #fff);
+
+  /* Complementary accent (secondary buttons, badges, tags) — set per theme */
+  --accent:              #b8923f;
+  --accent-200:          #ead9b8;
+  --accent-hover:        #997636;
+
+  /* Spacing density tokens (defaults = wide; overridden by density store).
+     All equal so spacing is uniform. */
+  --page-pad-x:          16px;
+  --page-pad-y:          16px;
+  --stack-gap:           16px;
+  --card-pad:            16px;
+}
+
+/* Uniform card inner padding — tracks the density setting */
+.card-pad { padding: var(--card-pad); }

@@ -1,0 +1,50 @@
+export interface BundleItem {
+  name: string
+  image?: string
+  spec: string
+  qty: number
+}
+
+export interface Product {
+  id: number
+  name: string
+  price: number
+  original: number
+  hasVariant?: boolean
+  stock?: number
+  sizes?: string[]
+  category?: string
+  image?: string
+  noCoupon?: boolean
+  isBundle?: boolean
+  bundleItems?: BundleItem[]
+}
+
+export const products: Product[] = [
+  { id: 1,  name: '韓版秋冬女童泡泡袖針織洋裝 保暖舒適百搭款',          price: 350, original: 500, hasVariant: false, stock: 11, sizes: ['90cm','100cm','110cm','120cm'], category: '寶寶包屁', image: 'https://images.unsplash.com/photo-1590005024862-6b67679a29fb?w=600&fit=crop' },
+  { id: 2,  name: '男童純棉長袖上衣 撞色條紋圓領T',                     price: 280, original: 420, hasVariant: true,  stock: 8,  sizes: ['S','M','L','XL'],             category: '大童童裝',  image: 'https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=600&fit=crop' },
+  { id: 3,  name: '寶寶連身包屁衣 有機棉長袖春秋款 0-18個月',           price: 199, original: 320, hasVariant: true,  stock: 15, sizes: ['66cm','73cm','80cm','90cm'],    category: '寶寶包屁', image: 'https://images.unsplash.com/photo-1596870230751-ebdfce98ec42?w=600&fit=crop' },
+  { id: 4,  name: '親子裝母女裝秋冬新款格紋棉麻長裙套裝',               price: 890, original: 1200, hasVariant: false, stock: 5, sizes: ['S','M','L'],                  category: '親子裝',   image: 'https://images.unsplash.com/photo-1476703993599-0035a21b17a9?w=600&fit=crop', noCoupon: true },
+  { id: 5,  name: '女童蕾絲公主裙 春夏薄款蓬蓬裙禮服',                  price: 450, original: 680, hasVariant: false, stock: 8,  sizes: ['100cm','110cm','120cm','130cm'], category: '小童童裝', image: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=600&fit=crop' },
+  { id: 6,  name: '男童加絨加厚衝鋒衣外套 防風防水戶外機能款 超值優惠', price: 620, original: 980, hasVariant: false, stock: 3,  sizes: ['110cm','120cm','130cm','140cm'], category: '大童童裝', image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&fit=crop', noCoupon: true },
+  { id: 7,  name: '嬰兒連帽爬服 卡通印花長袖爬爬服',                    price: 169, original: 250, hasVariant: false, stock: 20, sizes: ['59cm','66cm','73cm','80cm'],    category: '寶寶包屁', image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=600&fit=crop' },
+  { id: 8,  name: '女童牛仔短褲 夏季薄款休閒百搭',                      price: 220, original: 360, hasVariant: true,  stock: 12, sizes: ['100cm','110cm','120cm'],        category: '小童童裝', image: 'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=600&fit=crop' },
+  { id: 9,  name: '男童運動套裝 速乾透氣短袖短褲兩件組',                price: 399, original: 560, hasVariant: false, stock: 14, sizes: ['110cm','120cm','130cm','140cm'], category: '大童童裝', image: 'https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?w=600&fit=crop' },
+  { id: 10, name: '親子母子裝 夏季短袖棉麻寬鬆上衣',                    price: 580, original: 800, hasVariant: false, stock: 7,  sizes: ['S','M','L','XL'],              category: '親子裝',   image: 'https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?w=600&fit=crop' },
+  { id: 11, name: '女童碎花連衣裙 春款長袖娃娃領公主裙',                price: 320, original: 480, hasVariant: false, stock: 9,  sizes: ['100cm','110cm','120cm','130cm'], category: '小童童裝', image: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=600&fit=crop' },
+  { id: 12, name: '男童衛衣長褲套裝 秋冬加絨保暖兩件組',                price: 460, original: 650, hasVariant: false, stock: 6,  sizes: ['110cm','120cm','130cm'],        category: '大童童裝', image: 'https://images.unsplash.com/photo-1543269865-cbf427effbad?w=600&fit=crop' },
+  {
+    id: 13,
+    name: '新款組合 包屁衣韓版小洋裝雙件組',
+    price: 290, original: 350,
+    stock: 1,
+    category: '寶寶包屁',
+    image: 'https://images.unsplash.com/photo-1596870230751-ebdfce98ec42?w=600&fit=crop',
+    isBundle: true,
+    noCoupon: true,
+    bundleItems: [
+      { name: '新款 包屁衣韓版小洋裝 秋冬刺繡款', image: 'https://images.unsplash.com/photo-1596870230751-ebdfce98ec42?w=400&fit=crop', spec: '黑-S', qty: 1 },
+      { name: '新款 包屁衣韓版小洋裝 秋冬刺繡款', image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=400&fit=crop', spec: '白-S', qty: 1 },
+    ],
+  },
+]
