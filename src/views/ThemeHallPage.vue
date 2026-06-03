@@ -14,6 +14,7 @@ const route = useRoute()
 // 由 query.type 決定主題館 header 類型（flash = 限時搶購 bar，其餘 = 主題 Banner）
 const isFlash = computed(() => route.query.type === 'flash')
 const hallTitle = '秋冬童裝主題館'
+const bannerImg = `${import.meta.env.BASE_URL}banners/theme-banner.png`
 
 const vp = computed(() => useViewportStore().current.id)
 const gridCols = computed(() => ({
@@ -63,7 +64,7 @@ function onPage(e: { first: number }) {
 
         <!-- Header：限時搶購用紅色倒數 bar，其餘用主題 Banner -->
         <FlashSaleBar v-if="isFlash" />
-        <ThemeBanner v-else name="秋冬童裝主題館" />
+        <ThemeBanner v-else name="秋冬童裝主題館" :image="bannerImg" />
 
         <div class="flex flex-col gap-4">
           <div class="grid gap-3" :class="gridCols">

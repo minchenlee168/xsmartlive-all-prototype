@@ -9,6 +9,8 @@ import FlashSaleBar from '../components/FlashSaleBar.vue'
 import ThemeHallProducts from '../components/ThemeHallProducts.vue'
 
 const router = useRouter()
+// 主題館 banner 圖（存放於 public/banners/theme-banner.png）
+const bannerImg = `${import.meta.env.BASE_URL}banners/theme-banner.png`
 </script>
 
 <template>
@@ -33,7 +35,7 @@ const router = useRouter()
             </div>
             <Button label="查看更多" icon="pi pi-angle-right" icon-pos="right" outlined size="small" class="shrink-0 bg-white" @click="router.push('/theme')" />
           </div>
-          <ThemeBanner name="秋冬童裝主題館" />
+          <ThemeBanner name="秋冬童裝主題館" :image="bannerImg" />
           <ThemeHallProducts />
         </section>
 
@@ -49,7 +51,7 @@ const router = useRouter()
             </div>
             <Button label="查看更多" icon="pi pi-angle-right" icon-pos="right" outlined size="small" class="shrink-0 bg-white" @click="router.push('/theme')" />
           </div>
-          <ThemeBanner name="秋冬童裝主題館" />
+          <ThemeBanner name="秋冬童裝主題館" :image="bannerImg" />
           <ThemeHallProducts simple autoplay />
         </section>
 
