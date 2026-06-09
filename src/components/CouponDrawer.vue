@@ -5,8 +5,10 @@ import { useViewportStore } from '../stores/viewport'
 const visible = defineModel<boolean>('visible', { default: false })
 
 const viewportStore = useViewportStore()
-// 電腦版固定 680px；手機／平板符合容器寬度
-const drawerWidth = computed(() => `${viewportStore.current.width ?? 680}px`)
+// 平板與電腦版固定 680px；手機符合容器寬度
+const drawerWidth = computed(() =>
+  viewportStore.current.id === 'mobile' ? `${viewportStore.current.width}px` : '680px',
+)
 
 interface Coupon {
   id: number

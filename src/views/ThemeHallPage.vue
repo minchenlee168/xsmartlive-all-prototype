@@ -48,7 +48,7 @@ function onPage(e: { first: number }) {
       <div class="flex flex-col" style="gap: var(--stack-gap)">
 
         <!-- Breadcrumb -->
-        <nav class="flex items-center gap-[0.4375rem] text-sm py-1">
+        <nav class="flex items-center gap-2 text-sm py-1">
           <button class="text-[#64748b] hover:text-[color:var(--primary)] transition-colors" @click="router.push('/')">
             <i class="pi pi-home text-xs" />
           </button>
@@ -67,7 +67,7 @@ function onPage(e: { first: number }) {
         <ThemeBanner v-else name="秋冬童裝主題館" :image="bannerImg" />
 
         <div class="flex flex-col gap-4">
-          <div class="grid gap-3" :class="gridCols">
+          <div class="grid" :class="[gridCols, vp === 'mobile' ? 'gap-2' : 'gap-4']">
             <ProductCard
               v-for="p in pagedProducts"
               :key="p.key"

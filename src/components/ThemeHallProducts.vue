@@ -26,7 +26,7 @@ const items = products.slice(0, 10)
     :autoplay-interval="props.autoplay ? 3000 : undefined"
   >
     <template #item="{ data }">
-      <div class="px-1.5 h-full">
+      <div class="px-2 h-full">
         <ProductCard
           :id="data.id"
           :name="data.name"

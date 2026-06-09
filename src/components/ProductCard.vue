@@ -45,8 +45,7 @@ function onPrimaryAction(e: MouseEvent) {
 
 <template>
   <div
-    class="bg-white rounded-[12px] shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_rgba(0,0,0,0.06)] flex flex-col w-full h-full cursor-pointer hover:shadow-md transition-shadow"
-    :class="isPC ? 'gap-[0.4375rem] p-[0.5rem]' : 'gap-[0.3125rem] p-[0.5rem]'"
+    class="bg-white rounded-xl shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_rgba(0,0,0,0.06)] flex flex-col gap-2 p-2 w-full h-full cursor-pointer hover:shadow-md transition-shadow"
     @click="goDetail"
   >
     <!-- Product image -->
@@ -66,19 +65,19 @@ function onPrimaryAction(e: MouseEvent) {
       </p>
 
       <!-- Price -->
-      <div class="flex flex-col" :class="isPC ? 'gap-1' : 'gap-0.5'">
-        <span class="text-[#64748b] line-through" :class="isPC ? 'text-base' : 'text-[10px]'">NTD ${{ original }}</span>
-        <span class="text-[#f43f5e] font-semibold" :class="isPC ? 'text-2xl' : 'text-sm'">
-          <span class="text-[0.75rem] font-normal">NTD</span> ${{ price }}
+      <div class="flex flex-col gap-1">
+        <span class="text-[#64748b] line-through" :class="isPC ? 'text-base' : 'text-xs'">NTD ${{ original }}</span>
+        <span class="text-[#f43f5e] font-semibold" :class="isPC ? 'text-2xl' : 'text-base'">
+          <span class="text-xs font-normal">NTD</span> ${{ price }}
         </span>
       </div>
 
       <!-- Quantity + CTA -->
       <div v-if="!hideActions" class="flex flex-col mt-auto" :class="isPC ? 'gap-2' : 'gap-1'">
         <!-- Quantity selector -->
-        <div v-if="!hasVariant && !simple" class="flex flex-col" :class="isPC ? 'gap-1' : 'gap-1'">
+        <div v-if="!hasVariant && !simple" class="flex flex-col gap-1">
           <div class="flex items-center" :class="isPC ? 'gap-4' : 'gap-2'">
-            <span class="text-[#334155]" :class="isPC ? 'text-sm' : 'text-[11px]'">數量</span>
+            <span class="text-[#334155]" :class="isPC ? 'text-sm' : 'text-sm'">數量</span>
             <InputNumber
               v-model="qty"
               :min="1"
@@ -90,15 +89,15 @@ function onPrimaryAction(e: MouseEvent) {
               :class="{ 'is-sm': !isPC }"
             />
           </div>
-          <span class="text-[#334155]" :class="isPC ? 'text-sm' : 'text-[10px]'">還剩{{ stock ?? 11 }}件</span>
+          <span class="text-[#334155]" :class="isPC ? 'text-sm' : 'text-xs'">還剩{{ stock ?? 11 }}件</span>
         </div>
 
         <!-- CTA Button -->
         <button
           class="w-full flex items-center justify-center font-medium transition-colors"
           :class="isPC
-            ? 'gap-[7px] px-[13.25px] py-[9.75px] rounded-[6px] text-[15.75px]'
-            : 'gap-[5px] px-2 py-[6px] rounded-[4px] text-[11px]'"
+            ? 'gap-2 px-4 py-3 rounded-lg text-base'
+            : 'gap-1 px-3 min-h-[44px] py-2 rounded-lg text-sm'"
           :style="hasVariant
             ? { border: '1px solid var(--primary-200)', color: 'var(--primary)', background: 'transparent' }
             : { background: 'var(--primary-bg)', border: '1px solid var(--primary)', color: '#fff' }"
@@ -106,9 +105,9 @@ function onPrimaryAction(e: MouseEvent) {
           @mouseleave="(e) => { (e.currentTarget as HTMLElement).style.background = hasVariant ? 'transparent' : 'var(--primary-bg)' }"
           @click="onPrimaryAction"
         >
-          <i v-if="!hasVariant" class="pi pi-cart-plus" :class="isPC ? 'text-sm' : 'text-[10px]'" />
+          <i v-if="!hasVariant" class="pi pi-cart-plus" :class="isPC ? 'text-sm' : 'text-xs'" />
           {{ hasVariant ? '選擇規格' : '加入購物車' }}
-          <i v-if="hasVariant" class="pi pi-reply" :class="isPC ? 'text-sm' : 'text-[10px]'" />
+          <i v-if="hasVariant" class="pi pi-reply" :class="isPC ? 'text-sm' : 'text-xs'" />
         </button>
       </div>
     </div>

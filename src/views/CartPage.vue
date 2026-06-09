@@ -74,7 +74,7 @@ function goProduct(productId?: number) {
     </main>
 
     <!-- Content -->
-    <main v-else class="flex-1 max-w-[1280px] w-full mx-auto flex flex-col" style="padding: 0 0 var(--page-pad-y); gap: var(--stack-gap)">
+    <main v-else class="flex-1 max-w-[1280px] w-full mx-auto flex flex-col" :style="{ padding: `0 ${isPC ? '0' : 'var(--page-pad-x)'} var(--page-pad-y)`, gap: 'var(--stack-gap)' }">
       <div
         v-for="group in groups"
         :key="group.id"
@@ -106,7 +106,7 @@ function goProduct(productId?: number) {
         <!-- Items -->
         <div v-for="(item, ii) in group.items" :key="item.id" :class="ii !== group.items.length - 1 ? 'cart-divider' : ''">
           <!-- Item row -->
-          <div class="flex items-center gap-4 px-[var(--card-pad)] py-[var(--card-pad)]" :class="isPC ? 'gap-[14px]' : 'gap-3'">
+          <div class="flex items-center px-[var(--card-pad)] py-[var(--card-pad)]" :class="isPC ? 'gap-4' : 'gap-3'">
             <!-- Checkbox -->
             <Checkbox v-model="item.checked" binary class="shrink-0" />
 
@@ -136,11 +136,11 @@ function goProduct(productId?: number) {
                 >
                   {{ item.name }}
                 </p>
-                <div v-if="item.spec && item.spec !== '預設'" class="flex gap-4 text-[#334155] text-[14px]">
+                <div v-if="item.spec && item.spec !== '預設'" class="flex gap-4 text-[#334155]" :class="isPC ? 'text-[14px]' : 'text-base'">
                   <span>規格</span>
                   <span>{{ item.spec }}</span>
                 </div>
-                <div class="flex items-center gap-4 text-[14px]">
+                <div class="flex items-center gap-4" :class="isPC ? 'text-[14px]' : 'text-base'">
                   <span class="text-[#334155]">數量</span>
                   <InputNumber
                     v-model="item.qty"
@@ -166,7 +166,7 @@ function goProduct(productId?: number) {
                   icon="pi pi-trash"
                   severity="danger"
                   text
-                  size="small"
+                  class="!min-h-[44px] !px-3"
                   @click="removeItem(group, item.id)"
                 />
               </div>
@@ -174,12 +174,12 @@ function goProduct(productId?: number) {
           </div>
 
           <!-- Bundle fieldset -->
-          <div v-if="item.isBundle" class="px-[var(--card-pad)] pb-[16px] pl-[36px] pt-[15px]">
-            <div class="relative border border-[#e2e8f0] rounded-[6px] bg-white pt-4 px-[16.75px] pb-[16.75px]">
+          <div v-if="item.isBundle" class="px-[var(--card-pad)] pb-4 pl-9 pt-4">
+            <div class="relative border border-[#e2e8f0] rounded-md bg-white pt-4 px-4 pb-4">
               <!-- Legend button -->
               <button
-                class="absolute border-0 rounded-[6px] px-[11.5px] py-[8px] flex items-center gap-[7px] text-[14px] font-black text-[#334155] transition-colors hover:text-[var(--primary)]"
-                style="top: -17.75px; left: 15.75px; background: transparent"
+                class="absolute border-0 rounded-md px-3 py-2 flex items-center gap-2 text-[14px] font-black text-[#334155] transition-colors hover:text-[var(--primary)]"
+                style="top: -18px; left: 16px; background: transparent"
                 @click="item.bundleExpanded = !item.bundleExpanded"
               >
                 <i class="pi text-xs" :class="item.bundleExpanded ? 'pi-minus' : 'pi-plus'" />
@@ -190,9 +190,9 @@ function goProduct(productId?: number) {
                 <div
                   v-for="(sub, si) in item.bundleItems"
                   :key="si"
-                  class="bg-[#f1f5f9] rounded-[12px] p-[var(--card-pad)] flex items-center gap-4 shadow-[0px_1px_2px_rgba(0,0,0,0.1)]"
+                  class="bg-[#f1f5f9] rounded-xl p-[var(--card-pad)] flex items-center gap-4 shadow-[0px_1px_2px_rgba(0,0,0,0.1)]"
                 >
-                  <div class="w-[80px] h-[80px] shrink-0 bg-[#d9d9d9] rounded-[4px] overflow-hidden">
+                  <div class="w-[80px] h-[80px] shrink-0 bg-[#d9d9d9] rounded overflow-hidden">
                     <img v-if="sub.image" :src="sub.image" :alt="sub.name" class="w-full h-full object-cover" />
                   </div>
                   <div class="flex flex-col gap-1 min-w-0 flex-1">
@@ -220,27 +220,33 @@ function goProduct(productId?: number) {
 
     <!-- Sticky footer -->
     <div v-if="!isEmpty" class="sticky bottom-0 z-40 bg-white border-t border-b border-[#e2e8f0]">
-      <div class="max-w-[1280px] mx-auto px-4 py-[18px] flex items-center justify-between">
+      <div
+        class="max-w-[1280px] mx-auto px-4 py-3 flex items-center justify-between gap-3"
+        style="padding-bottom: max(12px, env(safe-area-inset-bottom))"
+      >
         <!-- Global select all -->
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 shrink-0">
           <Checkbox
             :model-value="globalAllChecked"
             binary
             input-id="global-all"
             @update:model-value="toggleGlobalAll"
           />
-          <label for="global-all" class="text-[15.75px] text-[#334155] cursor-pointer">選擇全部購物車</label>
+          <label for="global-all" class="text-base text-[#334155] cursor-pointer whitespace-nowrap">
+            {{ vp === 'mobile' ? '全選' : '選擇全部購物車' }}
+          </label>
         </div>
 
         <!-- Total + checkout -->
-        <div class="flex items-center gap-8">
-          <div class="flex items-center gap-4">
-            <span class="text-[18px] text-[#334155]">訂單總金額</span>
-            <span class="text-[30px] font-bold" style="color: var(--primary)">${{ globalTotal.toLocaleString() }}</span>
+        <div class="flex items-center min-w-0" :class="vp === 'mobile' ? 'gap-3' : 'gap-8'">
+          <div class="flex items-baseline gap-2 min-w-0">
+            <span v-if="vp !== 'mobile'" class="text-[18px] text-[#334155]">訂單總金額</span>
+            <span class="font-bold truncate" :class="vp === 'mobile' ? 'text-2xl' : 'text-[30px]'" style="color: var(--primary)">${{ globalTotal.toLocaleString() }}</span>
           </div>
           <Button
             :label="checkedCount > 0 ? `去結帳 (${checkedCount})` : '去結帳'"
-            class="px-16"
+            class="!min-h-[48px] shrink-0"
+            :class="vp === 'mobile' ? '!px-5' : 'px-16'"
             :disabled="checkedCount === 0"
             @click="goCheckout"
           />

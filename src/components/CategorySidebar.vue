@@ -17,18 +17,18 @@ const active = defineModel<string>('active')
   <div class="w-full @md:w-[160px] @xl:w-[244px] shrink-0 flex flex-col">
     <!-- Header -->
     <div
-      class="flex items-center px-2 py-2 rounded-t-[8px]"
+      class="flex items-center px-3 py-2 rounded-t-lg"
       style="background: var(--primary-bg)"
     >
-      <span class="text-xs @xl:text-sm font-semibold text-white">依分類顯示</span>
+      <span class="text-sm font-semibold text-white">依分類顯示</span>
     </div>
 
     <!-- Menu -->
-    <div class="bg-white border border-[#e2e8f0] rounded-b-[6px] p-[3.5px] flex flex-col gap-[2px]">
+    <div class="bg-white border border-[#e2e8f0] rounded-b-lg p-1 flex flex-col gap-1">
       <button
         v-for="item in items"
         :key="item"
-        class="w-full text-left px-2 @xl:px-[10.5px] py-[6px] @xl:py-[7px] rounded-[4px] text-xs @xl:text-sm transition-colors"
+        class="w-full text-left flex items-center px-3 py-2 min-h-[40px] rounded text-sm transition-colors"
         :style="active === item
           ? { background: 'color-mix(in srgb, var(--primary) 10%, transparent)', color: 'var(--surface-950)' }
           : { color: 'var(--surface-700)' }"

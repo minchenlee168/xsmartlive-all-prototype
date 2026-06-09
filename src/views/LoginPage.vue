@@ -93,7 +93,7 @@ function onSubmit() {
 
     <!-- Top bar -->
     <header class="relative z-10 bg-white border-b border-[var(--border-light)]">
-      <div class="max-w-[1280px] mx-auto flex items-center justify-between px-8 py-2 h-[57px]">
+      <div class="max-w-[1280px] mx-auto flex items-center justify-between px-8 py-2 h-14">
         <button class="flex items-center gap-2 shrink-0" @click="router.push('/')">
           <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: var(--primary-bg)">
             <span class="text-white font-bold text-base">X</span>
@@ -115,10 +115,10 @@ function onSubmit() {
     </header>
 
     <!-- Main content -->
-    <main class="relative z-10 px-4 py-[52px]">
-      <div class="max-w-[1280px] mx-auto flex flex-col @lg:flex-row items-center justify-center gap-12 @4xl:gap-[113px]">
+    <main class="relative z-10 px-4 py-12">
+      <div class="max-w-[1280px] mx-auto flex flex-col @lg:flex-row items-center justify-center gap-12 @4xl:gap-28">
         <!-- Left: welcome + illustration -->
-        <div class="flex flex-col items-center gap-[41px] shrink-0">
+        <div class="flex flex-col items-center gap-10 shrink-0">
           <h1 class="text-[24px] @3xl:text-[26px] @4xl:text-[36px] font-bold text-center leading-tight whitespace-nowrap" style="color: var(--surface-950)">
             歡迎光臨！<br>直播好康等你來逛
           </h1>
@@ -131,26 +131,26 @@ function onSubmit() {
         </div>
 
         <!-- Right: login card -->
-        <div class="bg-white rounded-2xl p-7 w-full max-w-[440px] flex flex-col gap-[14px] items-center"
+        <div class="bg-white rounded-2xl p-6 w-full max-w-[440px] flex flex-col gap-4 items-center"
              style="box-shadow: 0 2px 6px rgba(0,0,0,0.15)">
           <h2 class="text-[28px] font-bold text-center" style="color: var(--surface-950)">登入</h2>
 
-          <form class="w-full flex flex-col gap-[14px]" @submit.prevent="onSubmit">
+          <form class="w-full flex flex-col gap-4" @submit.prevent="onSubmit">
             <!-- Country code + phone -->
-            <div class="flex gap-[10px] items-start">
-              <div class="flex flex-col gap-[7px] w-[118px]">
-                <label class="text-sm" style="color: var(--surface-700)">國碼</label>
+            <div class="flex gap-2 items-start">
+              <div class="flex flex-col gap-2 w-[118px]">
+                <label class="text-base" style="color: var(--surface-700)">國碼</label>
                 <Select v-model="countryCode" :options="countryCodes" class="w-full" />
               </div>
-              <div class="flex-1 flex flex-col gap-[7px]">
-                <label class="text-sm" style="color: var(--surface-700)">電話號碼</label>
+              <div class="flex-1 flex flex-col gap-2">
+                <label class="text-base" style="color: var(--surface-700)">電話號碼</label>
                 <InputText v-model="phone" type="tel" placeholder="請輸入您的電話號碼" class="w-full" />
               </div>
             </div>
 
             <!-- Password -->
-            <div class="flex flex-col gap-[7px]">
-              <label class="text-sm" style="color: var(--surface-700)">密碼</label>
+            <div class="flex flex-col gap-2">
+              <label class="text-base" style="color: var(--surface-700)">密碼</label>
               <Password
                 v-model="password"
                 :feedback="false"
@@ -163,8 +163,8 @@ function onSubmit() {
             </div>
 
             <!-- reCaptcha -->
-            <div class="flex flex-col gap-[7px]">
-              <label class="text-sm" style="color: var(--surface-700)">驗證碼</label>
+            <div class="flex flex-col gap-2">
+              <label class="text-base" style="color: var(--surface-700)">驗證碼</label>
               <div ref="recaptchaContainer" class="recaptcha-host"></div>
               <p v-if="submitted && !captchaToken" class="text-sm" style="color: #ef4444">
                 請先完成人機驗證
@@ -172,7 +172,7 @@ function onSubmit() {
             </div>
 
             <!-- Terms agreement -->
-            <div class="flex gap-[7px] items-start">
+            <div class="flex gap-2 items-start">
               <Checkbox v-model="agreed" binary input-id="login-agree" class="mt-[2px] shrink-0" />
               <div class="flex flex-col gap-2 flex-1">
                 <p class="text-base leading-[1.4]" style="color: var(--surface-700)">
@@ -192,7 +192,7 @@ function onSubmit() {
               type="submit"
               :disabled="!canSubmit"
               label="使用電話號碼登入"
-              class="w-full mt-1"
+              class="w-full mt-1 !min-h-[48px]"
             />
           </form>
 
@@ -204,7 +204,7 @@ function onSubmit() {
           </div>
 
           <!-- Social login -->
-          <div class="w-full flex flex-col gap-[10px]">
+          <div class="w-full flex flex-col gap-2">
             <button class="social-btn" @click="socialLogin('Facebook')">
               <i class="pi pi-facebook text-[22px]" style="color: #1877f2" />
               <span>Facebook</span>
@@ -257,13 +257,14 @@ function onSubmit() {
   justify-content: center;
   gap: 8px;
   width: 100%;
-  padding: 9px 24px;
+  padding: 8px 24px;
+  min-height: 48px;
   border-radius: 6px;
   border: 1px solid var(--surface-700);
   background: white;
   color: var(--surface-700);
   font-weight: 700;
-  font-size: 15px;
+  font-size: 16px;
   transition: background-color 0.15s;
   cursor: pointer;
 }

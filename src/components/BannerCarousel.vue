@@ -16,7 +16,7 @@ const banners = [
     :show-navigators="false"
   >
     <template #item="{ data }">
-      <div class="relative h-[480px] rounded-[8px] overflow-hidden border border-[#e5e5e5] bg-gradient-to-br from-slate-700 to-slate-900 flex items-end">
+      <div class="relative h-[480px] rounded-lg overflow-hidden border border-[#e5e5e5] bg-gradient-to-br from-slate-700 to-slate-900 flex items-end">
         <!-- overlay -->
         <div class="absolute inset-0 bg-black/40" />
         <!-- text badge top-right -->

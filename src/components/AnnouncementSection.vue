@@ -22,7 +22,7 @@ const imgError = ref(false)
     </div>
 
     <!-- Announcement card -->
-    <div class="bg-white border border-[#e2e8f0] rounded-[8px] overflow-hidden">
+    <div class="bg-white border border-[#e2e8f0] rounded-lg overflow-hidden">
       <!-- 頂部橫幅圖 -->
       <div class="aspect-[3/1] w-full bg-gray-100">
         <img
@@ -39,7 +39,7 @@ const imgError = ref(false)
       </div>
 
       <!-- 場次文字 -->
-      <div class="px-8 py-7 text-center text-[18px] font-medium text-[#334155] flex flex-col gap-4">
+      <div class="px-8 py-6 text-center text-[18px] font-medium text-[#334155] flex flex-col gap-4">
         <p>✨ 本週直播場次時間</p>
         <div class="leading-relaxed text-base">
           <p>秋冬童裝馬拉松來啦😎</p>

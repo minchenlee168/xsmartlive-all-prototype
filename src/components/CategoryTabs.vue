@@ -93,8 +93,8 @@ watch(isMobile, () => {
           <button
             v-for="tab in visibleTabs"
             :key="tab"
-            class="relative shrink-0 px-4 py-3 text-sm font-bold text-white transition-colors"
-            :class="active === tab ? 'bg-white/15' : 'hover:bg-white/10'"
+            class="relative shrink-0 px-4 py-3 min-h-[44px] font-bold text-white transition-colors"
+            :class="[active === tab ? 'bg-white/15' : 'hover:bg-white/10', isMobile ? 'text-base' : 'text-sm']"
             @click="navigate(tab)"
           >
             {{ tab }}
@@ -105,7 +105,7 @@ watch(isMobile, () => {
         <!-- expand button — mobile only, only when categories overflow -->
         <button
           v-if="hasOverflow"
-          class="shrink-0 mx-2 flex items-center justify-center w-8 h-8 rounded-[6px] border transition-colors"
+          class="shrink-0 mx-2 flex items-center justify-center w-11 h-11 rounded-md border transition-colors"
           style="border-color: var(--primary-200)"
           @click="drawerOpen = !drawerOpen"
         >

@@ -9,9 +9,10 @@ import { useCartStore } from '../stores/cart'
 import { useOrdersStore } from '../stores/orders'
 
 const viewportStore = useViewportStore()
-const drawerWidth = computed(() => `${viewportStore.current.width ?? 1280}px`)
-// 優惠券抽屜：電腦版固定 680px，手機／平板符合容器寬
-const couponDrawerWidth = computed(() => `${viewportStore.current.width ?? 680}px`)
+const isMobile = computed(() => viewportStore.current.id === 'mobile')
+const isPC = computed(() => viewportStore.current.id === 'pc')
+// 抽屜（優惠券／運送方式）：平板與電腦版固定 680px，手機符合容器寬
+const drawerWidth = computed(() => isMobile.value ? `${viewportStore.current.width}px` : '680px')
 
 const router = useRouter()
 const ui = useUiStore()
@@ -339,16 +340,16 @@ const totalSaved = computed(() =>
 
     <!-- Page header -->
     <div>
-      <div class="max-w-[1280px] mx-auto px-4 py-[22px] flex items-center gap-3">
+      <div class="max-w-[1280px] mx-auto px-4 py-6 flex items-center gap-3">
         <Button icon="pi pi-arrow-left" severity="secondary" text rounded @click="router.back()" />
         <h1 class="font-bold text-[#020617] text-2xl">結帳</h1>
       </div>
     </div>
 
-    <main class="flex-1 max-w-[1280px] w-full mx-auto flex flex-col" style="padding: var(--page-pad-y) var(--page-pad-x) 120px; gap: var(--stack-gap)">
+    <main class="flex-1 max-w-[1280px] w-full mx-auto flex flex-col" :style="{ padding: `var(--page-pad-y) ${isPC ? '0' : 'var(--page-pad-x)'} 120px`, gap: 'var(--stack-gap)' }">
       <!-- 商品明細（不分賣場，單一列表） -->
       <section class="bg-white rounded-[12px] shadow-card">
-        <div class="px-[16px] py-[10.5px] cart-divider">
+        <div class="px-4 py-3 cart-divider">
           <span class="font-medium text-[#334155]">商品明細</span>
         </div>
         <div
@@ -356,7 +357,7 @@ const totalSaved = computed(() =>
           :key="item.id"
           :class="ii !== allItems.length - 1 ? 'cart-divider' : ''"
         >
-          <div class="flex items-start gap-4 px-[16px] py-[10.5px]">
+          <div class="flex items-start gap-4 px-4 py-3">
             <div
               class="shrink-0 w-[56px] h-[56px] rounded-[4px] overflow-hidden"
               :class="item.productId != null ? 'cursor-pointer' : ''"
@@ -407,14 +408,14 @@ const totalSaved = computed(() =>
           </div>
 
           <!-- Bundle（不可收合，直接列出；左緣對齊「數量」label） -->
-          <div v-if="item.bundleItems" class="pl-[88px] pr-[16px] pb-[16px]">
+          <div v-if="item.bundleItems" class="pl-[88px] pr-4 pb-4">
             <p class="text-[14px] text-[#334155] leading-relaxed">
               <span class="font-medium">組合商品內容：</span>{{ item.bundleItems.map(s => `${s.name} ×${s.qty * item.qty}`).join('、') }}
             </p>
           </div>
         </div>
 
-        <div class="cart-divider-top flex items-center justify-end gap-4 px-[16px] py-[14px]">
+        <div class="cart-divider-top flex items-center justify-end gap-4 px-4 py-4">
           <span class="text-[14px] text-[#334155]">訂單金額小計 ({{ allItems.length }}個商品)</span>
           <span class="text-[24px] font-bold" style="color: var(--primary)">${{ itemsDisplayTotal.toLocaleString() }}</span>
         </div>
@@ -443,7 +444,7 @@ const totalSaved = computed(() =>
 
       <!-- 配送資訊 -->
       <section class="bg-white rounded-[12px] shadow-card overflow-hidden">
-        <div class="px-[16px] py-[10.5px] cart-divider">
+        <div class="px-4 py-3 cart-divider">
           <span class="font-medium text-[#334155]">配送資訊</span>
         </div>
         <div class="card-pad flex flex-col gap-3">
@@ -474,7 +475,7 @@ const totalSaved = computed(() =>
 
       <!-- 發票資訊 -->
       <section class="bg-white rounded-[12px] shadow-card overflow-hidden">
-        <div class="px-[16px] py-[10.5px] cart-divider">
+        <div class="px-4 py-3 cart-divider">
           <span class="font-medium text-[#334155]">發票資訊</span>
         </div>
         <div class="card-pad flex flex-col gap-3 max-w-[440px]">
@@ -491,7 +492,7 @@ const totalSaved = computed(() =>
 
       <!-- 金額折抵 -->
       <section class="bg-white rounded-[12px] shadow-card overflow-hidden">
-        <div class="px-[16px] py-[10.5px] cart-divider">
+        <div class="px-4 py-3 cart-divider">
           <span class="font-medium text-[#334155]">金額折抵</span>
         </div>
         <div class="card-pad flex flex-col gap-4">
@@ -520,7 +521,7 @@ const totalSaved = computed(() =>
 
       <!-- 付款方式 -->
       <section class="bg-white rounded-[12px] shadow-card overflow-hidden">
-        <div class="px-[16px] py-[10.5px] cart-divider">
+        <div class="px-4 py-3 cart-divider">
           <span class="font-medium text-[#334155]">付款方式</span>
         </div>
         <div class="card-pad max-w-[440px]">
@@ -589,15 +590,18 @@ const totalSaved = computed(() =>
 
     <!-- Sticky footer -->
     <div class="sticky bottom-0 z-40 bg-white border-t border-b border-[#e2e8f0]">
-      <div class="max-w-[1280px] mx-auto px-4 py-[18px] flex items-center justify-end gap-6">
-        <div class="flex flex-col items-end leading-tight">
-          <div class="flex items-baseline gap-4">
-            <span class="text-[18px] text-[#334155]">總付款金額</span>
-            <span class="text-[30px] font-bold" style="color: var(--primary)">${{ finalTotal.toLocaleString() }}</span>
+      <div
+        class="max-w-[1280px] mx-auto px-4 py-3 flex items-center justify-end gap-4"
+        style="padding-bottom: max(12px, env(safe-area-inset-bottom))"
+      >
+        <div class="flex flex-col items-end leading-tight min-w-0">
+          <div class="flex items-baseline gap-2 min-w-0">
+            <span class="text-[#334155]" :class="isMobile ? 'text-sm' : 'text-[18px]'">總付款金額</span>
+            <span class="font-bold truncate" :class="isMobile ? 'text-2xl' : 'text-[30px]'" style="color: var(--primary)">${{ finalTotal.toLocaleString() }}</span>
           </div>
           <span class="text-sm" style="color: #ef4444">共省下 -${{ totalSaved.toLocaleString() }}</span>
         </div>
-        <Button label="去付款" class="px-16" @click="placeOrder" />
+        <Button label="去付款" class="!min-h-[48px] shrink-0" :class="isMobile ? '!px-6' : 'px-16'" @click="placeOrder" />
       </div>
     </div>
 
@@ -606,7 +610,7 @@ const totalSaved = computed(() =>
       <div v-if="couponDrawerOpen" class="drawer-backdrop" @click="couponDrawerOpen = false" />
     </Transition>
     <Transition name="drawer-slide">
-      <div v-if="couponDrawerOpen" class="drawer-panel" :style="{ width: couponDrawerWidth, maxWidth: '100vw' }">
+      <div v-if="couponDrawerOpen" class="drawer-panel" :style="{ width: drawerWidth, maxWidth: '100vw' }">
         <div class="max-w-[680px] mx-auto px-4 pt-5 pb-5">
           <!-- Header -->
           <div class="flex items-center justify-between mb-4">
@@ -660,7 +664,7 @@ const totalSaved = computed(() =>
     </Transition>
     <Transition name="drawer-slide">
       <div v-if="shipDrawerOpen" class="drawer-panel" :style="{ width: drawerWidth, maxWidth: '100vw' }">
-        <div class="max-w-[1280px] mx-auto px-4 pt-5 pb-5">
+        <div class="max-w-[680px] mx-auto px-4 pt-5 pb-5">
 
           <!-- ===== View: list ===== -->
           <template v-if="shipDrawerView === 'list'">
@@ -830,12 +834,12 @@ const totalSaved = computed(() =>
                 <label class="text-sm text-[#334155]">選擇超商</label>
                 <div class="flex gap-3">
                   <button
-                    class="w-[60px] h-[40px] rounded-[6px] border-2 flex items-center justify-center text-white text-[11px] font-bold transition-all"
+                    class="w-16 h-12 rounded-md border-2 flex items-center justify-center text-white text-xs font-bold transition-all"
                     :style="newStoreChain === '7-11' ? 'border-color: var(--primary); background: #ee1c25' : 'border-color: transparent; background: #ee1c25'"
                     @click="pickChain('7-11')"
                   >7-ELEVEN</button>
                   <button
-                    class="w-[60px] h-[40px] rounded-[6px] border-2 flex items-center justify-center text-white text-[11px] font-bold transition-all"
+                    class="w-16 h-12 rounded-md border-2 flex items-center justify-center text-white text-xs font-bold transition-all"
                     :style="newStoreChain === 'FamilyMart' ? 'border-color: var(--primary); background: #00a040' : 'border-color: transparent; background: #00a040'"
                     @click="pickChain('FamilyMart')"
                   >Family</button>

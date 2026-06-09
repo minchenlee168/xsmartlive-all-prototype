@@ -35,7 +35,7 @@ function onSubmit() {
 <template>
   <div class="min-h-screen relative overflow-hidden" style="background: var(--surface-100)">
     <header class="relative z-10 bg-white border-b border-[var(--border-light)]">
-      <div class="max-w-[1280px] mx-auto flex items-center justify-between px-8 py-2 h-[57px]">
+      <div class="max-w-[1280px] mx-auto flex items-center justify-between px-8 py-2 h-14">
         <button class="flex items-center gap-2 shrink-0" @click="router.push('/')">
           <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: var(--primary-bg)">
             <span class="text-white font-bold text-base">X</span>
@@ -48,42 +48,42 @@ function onSubmit() {
       </div>
     </header>
 
-    <main class="relative z-10 px-4 py-[52px] flex justify-center">
-      <div class="bg-white rounded-2xl p-8 w-full max-w-[440px] flex flex-col gap-[18px]"
+    <main class="relative z-10 px-4 py-12 flex justify-center">
+      <div class="bg-white rounded-2xl p-8 w-full max-w-[440px] flex flex-col gap-4"
            style="box-shadow: 0 2px 6px rgba(0,0,0,0.15)">
         <h2 class="text-[28px] font-bold text-center" style="color: var(--surface-950)">註冊新帳號</h2>
 
-        <form class="flex flex-col gap-[18px]" @submit.prevent="onSubmit">
-          <div class="flex gap-[10px] items-start">
-            <div class="flex flex-col gap-[7px] w-[118px]">
-              <label class="text-sm" style="color: var(--surface-700)">國碼</label>
+        <form class="flex flex-col gap-4" @submit.prevent="onSubmit">
+          <div class="flex gap-2 items-start">
+            <div class="flex flex-col gap-2 w-[118px]">
+              <label class="text-base" style="color: var(--surface-700)">國碼</label>
               <Select v-model="countryCode" :options="countryCodes" class="w-full" />
             </div>
-            <div class="flex-1 flex flex-col gap-[7px]">
-              <label class="text-sm" style="color: var(--surface-700)">電話號碼<span style="color:#ef4444"> *</span></label>
+            <div class="flex-1 flex flex-col gap-2">
+              <label class="text-base" style="color: var(--surface-700)">電話號碼<span style="color:#ef4444"> *</span></label>
               <InputText v-model="phone" type="tel" placeholder="請輸入您的電話號碼" class="w-full" />
             </div>
           </div>
 
-          <div class="flex flex-col gap-[7px]">
-            <label class="text-sm" style="color: var(--surface-700)">姓名<span style="color:#ef4444"> *</span></label>
+          <div class="flex flex-col gap-2">
+            <label class="text-base" style="color: var(--surface-700)">姓名<span style="color:#ef4444"> *</span></label>
             <InputText v-model="name" placeholder="請輸入您的姓名" class="w-full" />
           </div>
 
-          <div class="flex flex-col gap-[7px]">
-            <label class="text-sm" style="color: var(--surface-700)">密碼<span style="color:#ef4444"> *</span></label>
+          <div class="flex flex-col gap-2">
+            <label class="text-base" style="color: var(--surface-700)">密碼<span style="color:#ef4444"> *</span></label>
             <Password v-model="password" :feedback="false" toggle-mask placeholder="請設定您的密碼" fluid input-class="w-full" />
           </div>
 
-          <div class="flex flex-col gap-[7px]">
-            <label class="text-sm" style="color: var(--surface-700)">確認密碼<span style="color:#ef4444"> *</span></label>
+          <div class="flex flex-col gap-2">
+            <label class="text-base" style="color: var(--surface-700)">確認密碼<span style="color:#ef4444"> *</span></label>
             <Password v-model="confirm" :feedback="false" toggle-mask :invalid="passwordMismatch" placeholder="請再次輸入密碼" fluid input-class="w-full" />
             <p v-if="passwordMismatch" class="text-sm" style="color:#ef4444">兩次密碼輸入不一致</p>
           </div>
 
           <label class="flex items-start gap-2 cursor-pointer">
             <Checkbox v-model="agreed" binary input-id="reg-agree" class="mt-1" />
-            <span class="text-sm" style="color: var(--surface-700)">
+            <span class="text-base" style="color: var(--surface-700)">
               我同意直播管家購物小幫手
               <a class="underline cursor-pointer" style="color: var(--primary)" @click.prevent="router.push('/terms')">服務政策</a>
               與
@@ -92,7 +92,7 @@ function onSubmit() {
           </label>
           <p v-if="submitted && !agreed" class="text-sm -mt-2" style="color:#ef4444">請先同意服務條款與隱私政策</p>
 
-          <Button type="submit" :disabled="!canSubmit" label="建立帳號" class="w-full mt-1" />
+          <Button type="submit" :disabled="!canSubmit" label="建立帳號" class="w-full mt-1 !min-h-[48px]" />
         </form>
       </div>
     </main>

@@ -83,7 +83,7 @@ function measureKeywordWidths() {
   document.body.appendChild(measurer)
   keywordWidths.value = hotKeywords.map(kw => {
     const btn = document.createElement('button')
-    btn.style.cssText = 'font-family: inherit; font-size: 14px; font-weight: 500; padding: 7px 10.5px; white-space: nowrap;'
+    btn.style.cssText = 'font-family: inherit; font-size: 14px; font-weight: 500; padding: 8px 12px; white-space: nowrap;'
     btn.textContent = kw
     measurer.appendChild(btn)
     return Math.ceil(btn.offsetWidth)
@@ -164,7 +164,7 @@ function pickKeyword(kw: string) {
             <button
               v-for="kw in visibleHotKeywords"
               :key="kw"
-              class="text-sm font-medium text-[#475569] px-[10.5px] py-[7px] rounded-[6px] hover:bg-gray-100 hover:text-[color:var(--primary)] transition-colors whitespace-nowrap shrink-0"
+              class="text-sm font-medium text-[#475569] px-3 py-2 rounded-[6px] hover:bg-gray-100 hover:text-[color:var(--primary)] transition-colors whitespace-nowrap shrink-0"
               @click="runSearch(kw)"
             >
               {{ kw }}
@@ -177,7 +177,7 @@ function pickKeyword(kw: string) {
         <div class="flex items-center gap-1 @4xl:gap-3">
           <!-- Search icon on mobile/tablet — toggles collapsible search -->
           <button
-            class="@4xl:hidden flex items-center justify-center w-9 h-9 rounded-lg transition-colors"
+            class="@4xl:hidden flex items-center justify-center w-11 h-11 @4xl:w-9 @4xl:h-9 rounded-lg transition-colors"
             :class="mobileSearchOpen ? 'bg-gray-100 text-[color:var(--primary)]' : 'hover:bg-gray-100 text-[#334155]'"
             data-msearch
             @click="toggleMobileSearch"
@@ -187,7 +187,7 @@ function pickKeyword(kw: string) {
 
           <!-- Cart -->
           <button
-            class="flex items-center gap-1.5 px-2 @4xl:px-[10.5px] py-2 @4xl:py-[7px] rounded-[6px] hover:bg-gray-100 text-[#334155] text-sm font-medium"
+            class="flex items-center gap-1.5 px-2 @4xl:px-3 min-h-11 @4xl:min-h-0 py-2 rounded-md hover:bg-gray-100 text-[#334155] text-sm font-medium"
             @click="router.push('/cart')"
           >
             <OverlayBadge
@@ -204,7 +204,7 @@ function pickKeyword(kw: string) {
           <!-- Language — PC only -->
           <div class="hidden @4xl:block relative" data-lang-menu>
             <button
-              class="flex items-center gap-1.5 px-[10.5px] py-[7px] rounded-[6px] hover:bg-gray-100 text-[#334155] text-sm font-medium"
+              class="flex items-center gap-1.5 px-3 py-2 rounded-[6px] hover:bg-gray-100 text-[#334155] text-sm font-medium"
               @click="toggleLangMenu"
             >
               <i class="pi pi-globe text-sm" />
@@ -238,7 +238,7 @@ function pickKeyword(kw: string) {
           </div>
           <div v-else class="hidden @4xl:flex items-center relative" data-user-menu>
             <button
-              class="flex items-center gap-2 px-[10.5px] py-[7px] rounded-[6px] hover:bg-gray-100 transition-colors"
+              class="flex items-center gap-2 px-3 py-2 rounded-[6px] hover:bg-gray-100 transition-colors"
               @click="toggleUserMenu"
             >
               <span class="w-7 h-7 rounded-full bg-[#e2e8f0] text-[#475569] flex items-center justify-center text-sm font-medium">
@@ -256,7 +256,7 @@ function pickKeyword(kw: string) {
                 @click.stop
               >
                 <button
-                  class="w-full flex items-center h-[50px] px-[10.5px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-3 border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
                   @click="userMenuOpen = false; router.push('/member')"
                 >
                   <span class="flex-1 flex items-center gap-2 pl-[14px]">
@@ -265,7 +265,7 @@ function pickKeyword(kw: string) {
                   </span>
                 </button>
                 <button
-                  class="w-full flex items-center gap-[7px] px-[10.5px] py-[7px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center gap-2 px-3 py-2 border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
                   @click="openCurrencyDialog"
                 >
                   <span class="flex-1 flex flex-col gap-1 pl-[14px]">
@@ -275,7 +275,7 @@ function pickKeyword(kw: string) {
                   <i class="pi pi-cog text-sm text-[#334155]" />
                 </button>
                 <button
-                  class="w-full flex items-center h-[50px] px-[10.5px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-3 border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
                   @click="goMember"
                 >
                   <span class="flex-1 flex items-center justify-between pl-[14px]">
@@ -287,7 +287,7 @@ function pickKeyword(kw: string) {
                   </span>
                 </button>
                 <button
-                  class="w-full flex items-center h-[50px] px-[10.5px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-3 border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
                   @click="goMember"
                 >
                   <span class="flex-1 flex items-center justify-between pl-[14px]">
@@ -302,7 +302,7 @@ function pickKeyword(kw: string) {
                   </span>
                 </button>
                 <button
-                  class="w-full flex items-center h-[50px] px-[10.5px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-3 border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
                   @click="goMember"
                 >
                   <span class="flex-1 flex items-center gap-2 pl-[14px]">
@@ -311,7 +311,7 @@ function pickKeyword(kw: string) {
                   </span>
                 </button>
                 <button
-                  class="w-full flex items-center h-[50px] px-[10.5px] hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-3 hover:bg-gray-50 transition-colors text-left"
                   @click="onLogout"
                 >
                   <span class="flex-1 flex items-center gap-2 pl-[14px]">
@@ -326,7 +326,7 @@ function pickKeyword(kw: string) {
           <!-- User icon — mobile + tablet -->
           <div class="@4xl:hidden relative" data-user-menu>
             <button
-              class="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-gray-100 text-[#334155]"
+              class="flex items-center justify-center w-11 h-11 rounded-lg hover:bg-gray-100 text-[#334155]"
               @click="toggleUserMenu"
             >
               <i class="pi pi-user text-base" />
@@ -363,7 +363,7 @@ function pickKeyword(kw: string) {
                 @click.stop
               >
                 <button
-                  class="w-full flex items-center h-[50px] px-[10.5px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-3 border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
                   @click="userMenuOpen = false; router.push('/member')"
                 >
                   <span class="flex-1 flex items-center gap-2 pl-[14px]">
@@ -372,7 +372,7 @@ function pickKeyword(kw: string) {
                   </span>
                 </button>
                 <button
-                  class="w-full flex items-center gap-[7px] px-[10.5px] py-[7px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center gap-2 px-3 py-2 border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
                   @click="openCurrencyDialog"
                 >
                   <span class="flex-1 flex flex-col gap-1 pl-[14px]">
@@ -382,7 +382,7 @@ function pickKeyword(kw: string) {
                   <i class="pi pi-cog text-sm text-[#334155]" />
                 </button>
                 <button
-                  class="w-full flex items-center h-[50px] px-[10.5px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-3 border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
                   @click="goMember"
                 >
                   <span class="flex-1 flex items-center justify-between pl-[14px]">
@@ -394,7 +394,7 @@ function pickKeyword(kw: string) {
                   </span>
                 </button>
                 <button
-                  class="w-full flex items-center h-[50px] px-[10.5px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-3 border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
                   @click="goMember"
                 >
                   <span class="flex-1 flex items-center justify-between pl-[14px]">
@@ -409,7 +409,7 @@ function pickKeyword(kw: string) {
                   </span>
                 </button>
                 <button
-                  class="w-full flex items-center h-[50px] px-[10.5px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-3 border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
                   @click="goMember"
                 >
                   <span class="flex-1 flex items-center gap-2 pl-[14px]">
@@ -418,7 +418,7 @@ function pickKeyword(kw: string) {
                   </span>
                 </button>
                 <button
-                  class="w-full flex items-center h-[50px] px-[10.5px] hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-3 hover:bg-gray-50 transition-colors text-left"
                   @click="onLogout"
                 >
                   <span class="flex-1 flex items-center gap-2 pl-[14px]">

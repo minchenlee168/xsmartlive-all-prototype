@@ -26,7 +26,7 @@ const hasMore = products.length > MAX_DISPLAY
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="grid gap-3" :class="gridCols">
+    <div class="grid" :class="[gridCols, vp === 'mobile' ? 'gap-2' : 'gap-4']">
       <ProductCard
         v-for="p in displayProducts"
         :key="p.id"

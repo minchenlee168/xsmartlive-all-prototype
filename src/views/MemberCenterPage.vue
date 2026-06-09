@@ -968,14 +968,14 @@ function saveAddr() {
           <label class="text-sm text-[#334155]">選擇超商</label>
           <div class="flex gap-3">
             <button
-              class="w-[64px] h-[44px] rounded-[6px] border-2 flex items-center justify-center bg-white transition-all"
+              class="w-16 h-12 rounded-md border-2 flex items-center justify-center bg-white transition-all"
               :style="form.chain === '7-11' ? 'border-color: var(--primary)' : 'border-color:#e2e8f0'"
               @click="form.chain = '7-11'"
             >
               <img :src="sevenIcon" alt="7-11" class="w-7 h-7 object-contain" />
             </button>
             <button
-              class="w-[64px] h-[44px] rounded-[6px] border-2 flex items-center justify-center bg-white transition-all"
+              class="w-16 h-12 rounded-md border-2 flex items-center justify-center bg-white transition-all"
               :style="form.chain === 'FamilyMart' ? 'border-color: var(--primary)' : 'border-color:#e2e8f0'"
               @click="form.chain = 'FamilyMart'"
             >

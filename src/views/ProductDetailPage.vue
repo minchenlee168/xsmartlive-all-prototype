@@ -95,7 +95,7 @@ function shareTo(platform: 'facebook' | 'line' | 'instagram' | 'link') {
         </nav>
 
         <!-- Product card -->
-        <div class="bg-white rounded-[12px] shadow-[0px_1px_2px_rgba(0,0,0,0.1),0px_1px_3px_rgba(0,0,0,0.1)] p-[17.5px]">
+        <div class="bg-white rounded-xl shadow-[0px_1px_2px_rgba(0,0,0,0.1),0px_1px_3px_rgba(0,0,0,0.1)] p-4">
           <div class="flex flex-col gap-6">
           <div class="flex gap-6" :class="isMobile ? 'flex-col' : 'flex-row items-start'">
 
@@ -149,7 +149,7 @@ function shareTo(platform: 'facebook' | 'line' | 'instagram' | 'link') {
               </h1>
 
               <!-- Price block -->
-              <div class="bg-[#f7f7f7] rounded-[8px] px-3 py-5 flex items-end gap-4">
+              <div class="bg-[#f7f7f7] rounded-lg px-4 py-4 flex items-end gap-4">
                 <span class="font-bold leading-none" style="color: var(--primary)" :class="isPC ? 'text-[32px]' : 'text-2xl'">
                   ${{ product.price }}
                 </span>
@@ -198,11 +198,12 @@ function shareTo(platform: 'facebook' | 'line' | 'instagram' | 'link') {
                 </div>
               </div>
 
-              <!-- Add to cart -->
-              <div class="flex items-center">
+              <!-- Add to cart（手機改用底部 sticky bar） -->
+              <div v-if="!isMobile" class="flex items-center">
                 <Button
                   label="加入購物車"
                   icon="pi pi-cart-plus"
+                  class="!min-h-[48px]"
                   @click="addToCart"
                 />
               </div>
@@ -281,6 +282,19 @@ function shareTo(platform: 'facebook' | 'line' | 'instagram' | 'link') {
 
       </div>
     </main>
+
+    <!-- 手機版 sticky 加入購物車 bar -->
+    <div
+      v-if="isMobile"
+      class="sticky bottom-0 z-40 bg-white border-t border-[#e2e8f0] flex items-center gap-3 px-4 py-3"
+      style="padding-bottom: max(12px, env(safe-area-inset-bottom))"
+    >
+      <div class="flex flex-col leading-tight shrink-0">
+        <span class="text-xs text-[#64748b] line-through">${{ product.original }}</span>
+        <span class="text-xl font-bold" style="color: var(--primary)">${{ product.price }}</span>
+      </div>
+      <Button label="加入購物車" icon="pi pi-cart-plus" class="flex-1 !min-h-[48px]" @click="addToCart" />
+    </div>
   </div>
 
   <CouponDrawer v-model:visible="showCouponDrawer" />

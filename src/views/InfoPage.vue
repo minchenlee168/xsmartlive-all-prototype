@@ -52,9 +52,9 @@ const content = computed(() => {
     <CategoryTabs />
 
     <div>
-      <div class="max-w-[1280px] mx-auto px-4 py-[22px] flex items-center gap-3">
+      <div class="max-w-[1280px] mx-auto px-4 py-6 flex items-center gap-3">
         <button
-          class="flex items-center justify-center w-8 h-8 rounded-[6px] hover:bg-gray-100 text-[#334155] transition-colors"
+          class="flex items-center justify-center w-11 h-11 rounded-md hover:bg-gray-100 text-[#334155] transition-colors"
           @click="router.back()"
         >
           <i class="pi pi-arrow-left text-sm" />
@@ -64,10 +64,10 @@ const content = computed(() => {
     </div>
 
     <main class="flex-1 max-w-[860px] w-full mx-auto px-4 pb-12">
-      <div class="bg-white rounded-[12px] shadow-[0_1px_2px_rgba(0,0,0,0.1),0_1px_3px_rgba(0,0,0,0.1)] p-6 flex flex-col gap-5">
-        <div v-for="s in content.sections" :key="s.h" class="flex flex-col gap-1.5">
+      <div class="bg-white rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.1),0_1px_3px_rgba(0,0,0,0.1)] p-6 flex flex-col gap-6">
+        <div v-for="s in content.sections" :key="s.h" class="flex flex-col gap-2">
           <h2 class="text-base font-bold text-[#020617]">{{ s.h }}</h2>
-          <p class="text-sm leading-relaxed text-[#475569]">{{ s.b }}</p>
+          <p class="text-base leading-relaxed text-[#475569]">{{ s.b }}</p>
         </div>
       </div>
     </main>

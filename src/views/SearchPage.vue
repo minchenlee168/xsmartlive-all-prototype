@@ -13,7 +13,9 @@ const router = useRouter()
 const keyword = computed(() => (route.query.q as string) ?? '')
 const viewport = useViewportStore()
 const vp = computed(() => viewport.current.id)
-const gridCols = computed(() => vp.value === 'pc' ? 'grid-cols-4' : 'grid-cols-2')
+const gridCols = computed(() =>
+  vp.value === 'pc' ? 'grid-cols-4' : vp.value === 'tablet' ? 'grid-cols-3' : 'grid-cols-2',
+)
 
 const results = computed(() => {
   const q = keyword.value.trim().toLowerCase()
@@ -34,7 +36,7 @@ const results = computed(() => {
       <div class="flex flex-col" style="gap: var(--stack-gap)">
 
         <!-- Breadcrumb -->
-        <nav class="flex items-center gap-[7px] text-sm py-1">
+        <nav class="flex items-center gap-2 text-sm py-1">
           <button class="text-[#64748b] hover:text-[color:var(--primary)] transition-colors" @click="router.push('/')">
             <i class="pi pi-home text-xs" />
           </button>
@@ -51,11 +53,11 @@ const results = computed(() => {
         <!-- Empty state -->
         <div v-if="results.length === 0" class="flex flex-col items-center justify-center min-h-[300px] gap-3 text-[#64748b]">
           <i class="pi pi-search" style="font-size: 56px" />
-          <p class="text-sm">找不到符合「{{ keyword }}」的商品</p>
+          <p class="text-base">找不到符合「{{ keyword }}」的商品</p>
         </div>
 
         <!-- Grid -->
-        <div v-else class="grid gap-3" :class="gridCols">
+        <div v-else class="grid" :class="[gridCols, vp === 'mobile' ? 'gap-2' : 'gap-4']">
           <ProductCard
             v-for="product in results"
             :key="product.id"

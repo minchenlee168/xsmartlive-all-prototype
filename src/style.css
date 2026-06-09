@@ -85,3 +85,10 @@
 .qty-stepper.is-sm.p-inputnumber { height: 26px; }
 .qty-stepper.is-sm .p-inputnumber-input { width: 36px; font-size: 11px; padding-top: 0; padding-bottom: 0; }
 .qty-stepper.is-sm .p-inputnumber-button { width: 26px; }
+
+/* 觸控友善：表單文字輸入框與下拉選單最小高度 44px（數量步進器維持自有尺寸） */
+.p-inputtext,
+.p-select {
+  min-height: 44px;
+}
+.qty-stepper .p-inputnumber-input { min-height: 0; }

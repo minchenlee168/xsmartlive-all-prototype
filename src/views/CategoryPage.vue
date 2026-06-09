@@ -21,7 +21,9 @@ watch(() => route.query.sub, (sub) => {
 
 const viewport = useViewportStore()
 const vp = computed(() => viewport.current.id)
-const gridCols = computed(() => vp.value === 'pc' ? 'grid-cols-4' : 'grid-cols-2')
+const gridCols = computed(() =>
+  vp.value === 'pc' ? 'grid-cols-4' : vp.value === 'tablet' ? 'grid-cols-3' : 'grid-cols-2',
+)
 
 const pageProducts = products
 </script>
@@ -35,7 +37,7 @@ const pageProducts = products
       <div class="flex flex-col" style="gap: var(--stack-gap)">
 
         <!-- Breadcrumb -->
-        <nav class="flex items-center gap-[7px] text-sm py-1">
+        <nav class="flex items-center gap-2 text-sm py-1">
           <button class="text-[#64748b] hover:text-[color:var(--primary)] transition-colors" @click="router.push('/')">
             <i class="pi pi-home text-xs" />
           </button>
@@ -50,7 +52,7 @@ const pageProducts = products
         <!-- Filter button — mobile only -->
         <div v-if="vp === 'mobile'">
           <button
-            class="flex items-center gap-2 px-3 py-2 rounded-[6px] text-sm font-medium text-white transition-colors"
+            class="flex items-center gap-2 px-4 min-h-[44px] py-2 rounded-md text-base font-medium text-white transition-colors"
             style="background: var(--primary-bg)"
             @click="sidebarOpen = !sidebarOpen"
             @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--primary-hover-bg)'"
@@ -68,7 +70,7 @@ const pageProducts = products
         </div>
 
         <!-- Content: sidebar + grid -->
-        <div class="flex items-start gap-3 @lg:gap-4">
+        <div class="flex items-start gap-4">
           <!-- Sidebar — tablet+ inline -->
           <div v-if="vp !== 'mobile'" class="shrink-0">
             <CategorySidebar :tab="tab" v-model:active="activeSubCategory" />
@@ -76,7 +78,7 @@ const pageProducts = products
 
           <!-- Product grid -->
           <div class="flex-1 min-w-0">
-            <div class="grid gap-3" :class="gridCols">
+            <div class="grid" :class="[gridCols, vp === 'mobile' ? 'gap-2' : 'gap-4']">
               <ProductCard
                 v-for="product in pageProducts"
                 :key="product.id"
