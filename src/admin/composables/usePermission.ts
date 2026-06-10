@@ -12,5 +12,9 @@ export function usePermission() {
   function has(_key: PermissionKey): boolean {
     return true
   }
-  return { has }
+  // portal-vue useSidebarMenu 呼叫的介面：接受 undefined / 單一 key / key 陣列。
+  function hasPermission(_required?: PermissionKey | PermissionKey[]): boolean {
+    return true
+  }
+  return { has, hasPermission }
 }

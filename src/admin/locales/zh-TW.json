@@ -26,9 +26,11 @@
   },
   "layout": {
     "current_merchant": "目前店家：{name}",
+    "current_at": "目前在",
     "button": {
       "front_view": "前台檢視",
-      "switch_merchant": "切換店家"
+      "switch_merchant": "切換店家",
+      "back_to_main": "返回主選單"
     },
     "theme": {
       "switch_to_light": "切換為亮色模式",
@@ -55,9 +57,22 @@
     },
     "loading": "載入中...",
     "no_data": "目前無資料",
+    "logout": "登出",
+    "theme": {
+      "light": "亮色模式",
+      "dark": "暗色模式"
+    },
     "pagination": {
       "total_records": "共 {count} 筆"
     }
+  },
+  "topbar": {
+    "current_at": "目前在",
+    "switchable_shops": "可切換店家",
+    "front_view": "前台檢視",
+    "front_view_shop": "前往「{name}」前台",
+    "front_view_merchant": "前往商城前台",
+    "logout_mock": "Demo 版未接登入流程"
   },
   "api_error_message": {
     "unknown": "發生未知錯誤"
