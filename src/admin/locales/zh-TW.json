@@ -1,0 +1,46 @@
+{
+  "system": {
+    "app_name": "直播管家"
+  },
+  "nav": {
+    "live": "直播收單區",
+    "live_order": "開始收單",
+    "live_records": "收單紀錄"
+  },
+  "route": {
+    "live_order": "開始收單",
+    "live_records": "收單紀錄"
+  },
+  "layout": {
+    "current_merchant": "目前店家：{name}",
+    "button": {
+      "front_view": "前台檢視",
+      "switch_merchant": "切換店家"
+    },
+    "theme": {
+      "switch_to_light": "切換為亮色模式",
+      "switch_to_dark": "切換為暗色模式"
+    },
+    "language": {
+      "zh_tw": "繁體中文"
+    },
+    "user": {
+      "admin": "管理員"
+    }
+  },
+  "common": {
+    "button": {
+      "retry": "重試",
+      "cancel": "取消",
+      "save": "儲存",
+      "delete": "刪除",
+      "confirm": "確認",
+      "close": "關閉",
+      "confirm_save": "確定"
+    },
+    "loading": "載入中..."
+  },
+  "api_error_message": {
+    "unknown": "發生未知錯誤"
+  }
+}

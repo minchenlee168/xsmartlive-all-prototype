@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LandingPage from '../views/LandingPage.vue'
-import AdminPlaceholderPage from '../views/AdminPlaceholderPage.vue'
+import AdminApp from '../admin/AdminApp.vue'
+import { adminChildRoutes, RouteName as AdminRouteName, registerTitleGuard } from '../admin/router'
 import HomePage from '../views/HomePage.vue'
 import ThemeHallPage from '../views/ThemeHallPage.vue'
 import CategoryPage from '../views/CategoryPage.vue'
@@ -20,7 +21,12 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', component: LandingPage },
-    { path: '/admin', component: AdminPlaceholderPage },
+    {
+      path: '/admin',
+      component: AdminApp,
+      redirect: { name: AdminRouteName.LiveOrder },
+      children: adminChildRoutes,
+    },
     { path: '/shop', component: HomePage },
     { path: '/theme', component: ThemeHallPage },
     { path: '/category/:tab', component: CategoryPage },
@@ -62,5 +68,8 @@ router.afterEach(() => {
   if (loadingTimer) clearTimeout(loadingTimer)
   loadingTimer = setTimeout(() => useUiStore().setRouteLoading(false), 500)
 })
+
+// 後台路由切換時依 meta.i18nKey 更新 document.title
+registerTitleGuard(router)
 
 export default router

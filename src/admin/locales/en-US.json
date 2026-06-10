@@ -1,0 +1,46 @@
+{
+  "system": {
+    "app_name": "Live Commerce Console"
+  },
+  "nav": {
+    "live": "Live Commerce",
+    "live_order": "Start Ordering",
+    "live_records": "Order records"
+  },
+  "route": {
+    "live_order": "Start Ordering",
+    "live_records": "Order records"
+  },
+  "layout": {
+    "current_merchant": "Current merchant: {name}",
+    "button": {
+      "front_view": "Front view",
+      "switch_merchant": "Switch merchant"
+    },
+    "theme": {
+      "switch_to_light": "Switch to light mode",
+      "switch_to_dark": "Switch to dark mode"
+    },
+    "language": {
+      "zh_tw": "Traditional Chinese"
+    },
+    "user": {
+      "admin": "Admin"
+    }
+  },
+  "common": {
+    "button": {
+      "retry": "Retry",
+      "cancel": "Cancel",
+      "save": "Save",
+      "delete": "Delete",
+      "confirm": "Confirm",
+      "close": "Close",
+      "confirm_save": "OK"
+    },
+    "loading": "Loading..."
+  },
+  "api_error_message": {
+    "unknown": "An unknown error occurred"
+  }
+}

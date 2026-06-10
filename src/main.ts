@@ -2,10 +2,17 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import PrimeVue from 'primevue/config'
 import ToastService from 'primevue/toastservice'
+import ConfirmationService from 'primevue/confirmationservice'
+import Tooltip from 'primevue/tooltip'
 import Aura from '@primeuix/themes/aura'
 import { definePreset } from '@primeuix/themes'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import router from './router'
 import './style.css'
+import './admin/style.css'
+import './admin/fontawesome'
+import { i18n } from './admin/i18n'
+import { vPermission } from './admin/directives/vPermission'
 import App from './App.vue'
 
 // 全域常用元件（避免各檔重複 import）
@@ -79,6 +86,7 @@ const app = createApp(App)
 app
   .use(createPinia())
   .use(router)
+  .use(i18n)
   .use(PrimeVue, {
     theme: {
       preset: AppPreset,
@@ -91,6 +99,11 @@ app
     },
   })
   .use(ToastService)
+  .use(ConfirmationService)
+
+app.component('FontAwesomeIcon', FontAwesomeIcon)
+app.directive('tooltip', Tooltip)
+app.directive('permission', vPermission)
 
 // 全域註冊元件
 app.component('Button', Button)
