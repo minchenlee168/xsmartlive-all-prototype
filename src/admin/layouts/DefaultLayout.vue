@@ -68,6 +68,38 @@ const navGroups: NavGroup[] = [
       },
     ],
   },
+  {
+    key: 'marketing',
+    i18nKey: 'nav.marketing',
+    icon: 'pi pi-megaphone',
+    children: [
+      {
+        key: 'bid-gift-lottery',
+        i18nKey: 'nav.bid_gift_lottery',
+        route: RouteName.BidGiftLotteryList,
+        icon: 'pi pi-gift',
+      },
+      {
+        key: 'keyword-lottery',
+        i18nKey: 'nav.keyword_lottery',
+        route: RouteName.KeywordLotteryList,
+        icon: 'pi pi-hashtag',
+      },
+    ],
+  },
+  {
+    key: 'merchant-management',
+    i18nKey: 'nav.merchant_management.merchant_management',
+    icon: 'pi pi-shop',
+    children: [
+      {
+        key: 'store-management',
+        i18nKey: 'nav.merchant_management.store_management',
+        route: RouteName.StoreManagement,
+        icon: 'pi pi-building',
+      },
+    ],
+  },
 ]
 
 function onGroupClick(group: NavGroup): void {

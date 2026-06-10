@@ -9,13 +9,17 @@ import { useUiStore } from './stores/ui'
 const viewportStore = useViewportStore()
 const ui = useUiStore()
 const route = useRoute()
-// 後台路徑：採桌面寬版、隱藏行動裝置 viewport frame 與浮動控制按鈕
-const isAdmin = computed(() => route.path === '/admin' || route.path.startsWith('/admin/'))
-// 入口頁與後台不顯示浮動控制按鈕
-const showControls = computed(() => route.path !== '/' && !isAdmin.value)
+// 後台與直播抽獎頁：全螢幕、隱藏行動裝置 viewport frame 與浮動控制按鈕
+const isFullscreen = computed(() => (
+  route.path === '/admin'
+  || route.path.startsWith('/admin/')
+  || route.path.startsWith('/lottery/')
+))
+// 入口頁、後台、抽獎頁不顯示浮動控制按鈕
+const showControls = computed(() => route.path !== '/' && !isFullscreen.value)
 
 const frameStyle = computed(() => {
-  if (isAdmin.value) return {}
+  if (isFullscreen.value) return {}
   const w = viewportStore.current.width
   if (!w) return {}
   return {
@@ -27,7 +31,7 @@ const frameStyle = computed(() => {
   }
 })
 
-const isConstrained = computed(() => !isAdmin.value && !!viewportStore.current.width)
+const isConstrained = computed(() => !isFullscreen.value && !!viewportStore.current.width)
 </script>
 
 <template>

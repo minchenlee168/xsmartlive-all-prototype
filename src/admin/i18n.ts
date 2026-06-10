@@ -8,6 +8,12 @@ import portalProductZhTW from '@/admin/views/live-order/portal-product-form/loca
 import portalProductEnUS from '@/admin/views/live-order/portal-product-form/locales/en-US.json'
 import liveRecordsZhTW from '@/admin/views/live-records/locales/zh-TW.json'
 import liveRecordsEnUS from '@/admin/views/live-records/locales/en-US.json'
+import bidGiftLotteryZhTW from '@/admin/views/marketing/bid-gift-lottery/locales/zh-TW.json'
+import bidGiftLotteryEnUS from '@/admin/views/marketing/bid-gift-lottery/locales/en-US.json'
+import keywordLotteryZhTW from '@/admin/views/marketing/keyword-lottery/locales/zh-TW.json'
+import keywordLotteryEnUS from '@/admin/views/marketing/keyword-lottery/locales/en-US.json'
+import storeManagementZhTW from '@/admin/views/merchant-management/store-management/locales/zh-TW.json'
+import storeManagementEnUS from '@/admin/views/merchant-management/store-management/locales/en-US.json'
 
 /**
  * 合併 app 級與各 view 級 locale；後者覆寫前者。
@@ -20,8 +26,24 @@ function mergeMessages(...sources: Record<string, unknown>[]): Record<string, un
 }
 
 const messages = {
-  'zh-TW': mergeMessages(appZhTW, liveOrderZhTW, portalProductZhTW, liveRecordsZhTW),
-  'en-US': mergeMessages(appEnUS, liveOrderEnUS, portalProductEnUS, liveRecordsEnUS),
+  'zh-TW': mergeMessages(
+    appZhTW,
+    liveOrderZhTW,
+    portalProductZhTW,
+    liveRecordsZhTW,
+    bidGiftLotteryZhTW,
+    keywordLotteryZhTW,
+    storeManagementZhTW,
+  ),
+  'en-US': mergeMessages(
+    appEnUS,
+    liveOrderEnUS,
+    portalProductEnUS,
+    liveRecordsEnUS,
+    bidGiftLotteryEnUS,
+    keywordLotteryEnUS,
+    storeManagementEnUS,
+  ),
 }
 
 /**

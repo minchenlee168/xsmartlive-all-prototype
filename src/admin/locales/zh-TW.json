@@ -5,11 +5,24 @@
   "nav": {
     "live": "直播收單區",
     "live_order": "開始收單",
-    "live_records": "收單紀錄"
+    "live_records": "收單紀錄",
+    "marketing": "行銷活動",
+    "bid_gift_lottery": "得標禮抽獎",
+    "keyword_lottery": "關鍵字抽獎",
+    "merchant_management": {
+      "merchant_management": "商家管理",
+      "store_management": "商店管理"
+    }
   },
   "route": {
     "live_order": "開始收單",
-    "live_records": "收單紀錄"
+    "live_records": "收單紀錄",
+    "bid_gift_lottery_list": "得標禮抽獎",
+    "bid_gift_lottery_draw": "得標禮抽獎開獎",
+    "keyword_lottery_list": "關鍵字抽獎",
+    "merchant_management": {
+      "store_management": "商店管理"
+    }
   },
   "layout": {
     "current_merchant": "目前店家：{name}",
@@ -33,12 +46,18 @@
       "retry": "重試",
       "cancel": "取消",
       "save": "儲存",
+      "edit": "編輯",
       "delete": "刪除",
       "confirm": "確認",
       "close": "關閉",
-      "confirm_save": "確定"
+      "confirm_save": "確定",
+      "ok": "確定"
     },
-    "loading": "載入中..."
+    "loading": "載入中...",
+    "no_data": "目前無資料",
+    "pagination": {
+      "total_records": "共 {count} 筆"
+    }
   },
   "api_error_message": {
     "unknown": "發生未知錯誤"

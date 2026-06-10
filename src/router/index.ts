@@ -1,7 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LandingPage from '../views/LandingPage.vue'
 import AdminApp from '../admin/AdminApp.vue'
-import { adminChildRoutes, RouteName as AdminRouteName, registerTitleGuard } from '../admin/router'
+import {
+  adminChildRoutes,
+  lotteryFullscreenRoutes,
+  RouteName as AdminRouteName,
+  registerTitleGuard,
+} from '../admin/router'
 import HomePage from '../views/HomePage.vue'
 import ThemeHallPage from '../views/ThemeHallPage.vue'
 import CategoryPage from '../views/CategoryPage.vue'
@@ -27,6 +32,8 @@ const router = createRouter({
       redirect: { name: AdminRouteName.LiveOrder },
       children: adminChildRoutes,
     },
+    // 直播大螢幕抽獎頁（全螢幕、無 admin 殼層）
+    ...lotteryFullscreenRoutes,
     { path: '/shop', component: HomePage },
     { path: '/theme', component: ThemeHallPage },
     { path: '/category/:tab', component: CategoryPage },
