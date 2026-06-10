@@ -5,17 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>直播管家商城</title>
     <script>
-      // GitHub Pages SPA fallback：404.html 把原 URL 寫進 sessionStorage 後跳回根；
-      // 這裡在 vue-router 啟動前先 history.replaceState 把 URL 還原，router 就能匹配原 path。
-      (function () {
-        var redirect = sessionStorage.spaRedirect
-        if (redirect) {
-          delete sessionStorage.spaRedirect
-          if (redirect !== location.href) {
-            history.replaceState(null, '', redirect)
-          }
+      // GitHub Pages SPA fallback（採 rafrex/spa-github-pages 方案）：
+      // 404.html 把原 URL 編成 query string（如 /?/lottery/draw/L001）後 redirect 回根；
+      // 這裡偵測到該 query 就 history.replaceState 還原成原 path，再交給 vue-router 接手。
+      ;(function (l) {
+        if (l.search[1] === '/') {
+          var decoded = l.search
+            .slice(1)
+            .split('&')
+            .map(function (s) { return s.replace(/~and~/g, '&') })
+            .join('?')
+          window.history.replaceState(null, '', l.pathname.slice(0, -1) + decoded + l.hash)
         }
-      })()
+      })(window.location)
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

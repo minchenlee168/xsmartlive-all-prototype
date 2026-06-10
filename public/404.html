@@ -4,15 +4,26 @@
     <meta charset="UTF-8" />
     <title>直播管家商城</title>
     <!--
-      GitHub Pages SPA fallback：所有未匹配的路徑（例如 /xsmartlive-all-prototype/lottery/draw/L001）
-      都會落到這頁。把原 URL 記到 sessionStorage 後 redirect 回 index.html，
-      index.html 的 inline script 會還原 history 並交給 vue-router 接手。
+      GitHub Pages SPA fallback（採 rafrex/spa-github-pages 方案）：把原 URL 包成
+      query string 後 redirect 回 index.html；index.html 啟動 script 再 replaceState 還原。
+
+      pathSegmentsToKeep = 1 表示保留 base path 第一段（/xsmartlive-all-prototype/）。
     -->
     <script>
-      (function () {
-        var BASE = '/xsmartlive-all-prototype/'
-        sessionStorage.spaRedirect = location.href
-        location.replace(BASE)
+      ;(function () {
+        var pathSegmentsToKeep = 1
+        var l = window.location
+        l.replace(
+          l.protocol
+            + '//'
+            + l.hostname
+            + (l.port ? ':' + l.port : '')
+            + l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/')
+            + '/?/'
+            + l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~')
+            + (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '')
+            + l.hash,
+        )
       })()
     </script>
   </head>
