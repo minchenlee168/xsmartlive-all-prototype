@@ -1,7 +1,7 @@
 <template>
-  <!-- 直播商品卡：240×266，per-field 編輯 + 開始收單/結束收單流程 -->
+  <!-- 直播商品卡：h-266，寬度跟著 grid cell 撐滿（卡片+gap 總寬對齊快速新增） -->
   <div
-    class="rounded-[12px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] overflow-hidden relative h-[266px] w-full max-w-[240px] bg-[var(--p-content-background)]"
+    class="rounded-[12px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] overflow-hidden relative h-[266px] w-full bg-[var(--p-content-background)]"
   >
 
     <!-- 狀態 Tag（左上絕對定位）— 規範：直播收單區 status-badge -->
@@ -242,7 +242,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
@@ -269,6 +269,8 @@ interface LiveProduct {
   cost?: number
   price?: number
   stock?: number
+  /** 累計已售；ticker 在 'live' + orderingEnabled 時遞增（cap 在 stock）。 */
+  sold?: number
   weight?: number
   allowMixColor?: boolean
   pickSpecAfterWinning?: boolean
@@ -295,8 +297,12 @@ interface PopoverApi {
 
 interface Props {
   product: LiveProduct
+  /** 是否啟用收單模擬 ticker（有收單來源時為 true）。 */
+  orderingEnabled?: boolean
 }
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  orderingEnabled: false,
+})
 const isGift = computed(() => props.product?.isGift === true)
 const emit = defineEmits<{
   delete: [id: number]
@@ -540,19 +546,64 @@ function buildFlatSpecsFromData(data: Record<string, unknown>): ProductSpec[] | 
   return undefined
 }
 
-const stats = computed(() => ({
-  stock: props.product.stock ?? 0,
-  sold:  Math.max(0, Math.floor((props.product.stock ?? 0) * 0.4)),
-  amount: status.value === 'live'
-    ? formatK((props.product.price ?? 0) * Math.max(1, Math.floor((props.product.stock ?? 0) * 12)))
-    : ((props.product.price ?? 0) * Math.max(1, Math.floor((props.product.stock ?? 0) * 0.4))).toLocaleString(),
-}))
+const stats = computed(() => {
+  const stock = props.product.stock ?? 0
+  const sold  = props.product.sold  ?? 0
+  const price = props.product.price ?? 0
+  return {
+    stock,
+    sold,
+    amount: formatK(price * sold),
+  }
+})
 
 /** Format a number using a "k" suffix once it crosses 10,000. */
 function formatK(n: number): string {
   if (n >= 10000) return (n / 1000).toFixed(0) + 'k'
   return n.toLocaleString()
 }
+
+// ── 收單模擬 ticker ───────────────────────────────
+// 'live' + orderingEnabled 時，依隨機 800~1800ms 把 product.sold +1（cap 在 stock）。
+// 狀態變 'ready' / 'done' 或失去收單來源 → 自動停。賣完也停。
+let saleTimer: ReturnType<typeof setTimeout> | null = null
+
+function shouldTick(): boolean {
+  if (!props.orderingEnabled) return false
+  if (status.value !== 'live') return false
+  const stock = props.product.stock ?? 0
+  const sold  = props.product.sold  ?? 0
+  return sold < stock
+}
+
+function scheduleNextTick(): void {
+  stopTicker()
+  if (!shouldTick()) return
+  const delay = 800 + Math.random() * 1000
+  saleTimer = setTimeout(() => {
+    const stock = props.product.stock ?? 0
+    const sold  = props.product.sold  ?? 0
+    if (sold < stock) {
+      ;(props.product as Record<string, unknown>).sold = sold + 1
+    }
+    scheduleNextTick()
+  }, delay)
+}
+
+function stopTicker(): void {
+  if (saleTimer) { clearTimeout(saleTimer); saleTimer = null }
+}
+
+watch(
+  [() => status.value, () => props.orderingEnabled],
+  () => {
+    if (shouldTick()) scheduleNextTick()
+    else stopTicker()
+  },
+  { immediate: true },
+)
+
+onUnmounted(stopTicker)
 
 // 卡片內最多顯示 3 顆 chip + 1 個「+N 更多」按鈕。
 // 由於 chip 標籤已含關鍵字（例：「A原味+1」），單顆 chip 寬度約 90~110px，

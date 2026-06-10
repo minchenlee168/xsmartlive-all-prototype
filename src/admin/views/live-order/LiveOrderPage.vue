@@ -2,7 +2,7 @@
   <!-- 直播收單：自訂版型（多收單來源） -->
   <!-- 上：Banner（hasAnySource）；上：Toolbar；下：空狀態 OR 收單操作頁 -->
 
-  <div class="flex flex-col gap-4 flex-1 min-h-0">
+  <div class="flex flex-col gap-2 flex-1 min-h-0">
 
     <!-- ── Toolbar ─────────────────────────────────── -->
     <div class="flex items-center gap-2 flex-wrap">
@@ -51,9 +51,8 @@
         </button>
       </span>
 
-      <!-- 商品狀態統計：跟功能鈕同列，緊跟 BatchEdit -->
+      <!-- 商品狀態統計：跟功能鈕同列，緊跟 BatchEdit；一直顯示（即使沒選收單來源 / 沒商品也顯示 0） -->
       <div
-        v-if="hasAnySource"
         class="flex items-center gap-3 px-3 py-1.5 rounded-[6px] border border-[var(--p-content-border-color)] bg-[var(--p-content-background)]"
       >
         <span
@@ -79,6 +78,14 @@
           <FontAwesomeIcon :icon="['far', 'circle-check']" class="text-[16px]" />
           {{ statusCounts.done }}
         </span>
+        <span class="w-px h-3 bg-[var(--p-content-border-color)]" />
+        <span
+          v-tooltip.bottom="t('live_order.tooltip.sales_total')"
+          class="inline-flex items-center gap-1.5 text-[14px] font-bold text-[#f97316]"
+        >
+          <FontAwesomeIcon :icon="['far', 'dollar-sign']" class="text-[16px]" />
+          {{ salesTotalDisplay }}
+        </span>
       </div>
 
       <!-- 右側群組：顯示留言 switch + 結束收單（只在 hasAnySource 時顯示） -->
@@ -103,10 +110,10 @@
 
     <!-- ── Body：空狀態 OR 收單操作頁 ───────────────── -->
     <template v-if="!hasAnySource">
-      <div class="flex flex-1 min-h-0 gap-4">
-        <div class="flex-1 flex flex-col self-stretch min-w-0 gap-4">
+      <div class="flex flex-1 min-h-0 gap-2">
+        <div class="flex-1 flex flex-col self-stretch min-w-0 gap-2">
           <!-- 快速新增（與右側 panel 同高度起點） -->
-          <QuickAddProductForm v-if="currentSession" @submit="onQuickAddProducts" />
+          <QuickAddProductForm v-if="currentSession" ref="quickAddRef" @submit="onQuickAddProducts" />
 
           <div v-if="selectedProducts.length === 0" class="flex flex-col items-center justify-center gap-3 pt-12">
             <i class="pi pi-inbox text-5xl text-[var(--p-text-muted-color)]"></i>
@@ -114,11 +121,12 @@
             <p class="text-[14px] leading-normal text-[var(--p-text-muted-color)]">{{ t('live_order.empty.no_product_hint') }}</p>
           </div>
           <div v-else class="flex-1 overflow-y-auto">
-            <div class="grid gap-2 justify-start" style="grid-template-columns: repeat(auto-fill, 240px)">
+            <div class="grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(232px, 1fr))">
               <LiveProductCard
                 v-for="p in selectedProducts"
                 :key="p.id"
                 :product="p"
+                :ordering-enabled="hasAnySource"
                 v-model:status="p.status"
                 @delete="onDeleteProduct"
               />
@@ -153,7 +161,7 @@
         @remove-source="onRemoveSource"
         @delete-product="onDeleteProduct">
         <template #products-header>
-          <QuickAddProductForm v-if="currentSession" @submit="onQuickAddProducts" />
+          <QuickAddProductForm v-if="currentSession" ref="quickAddRef" @submit="onQuickAddProducts" />
         </template>
       </OrderModeView>
     </template>
@@ -206,6 +214,7 @@ interface LiveProduct {
   sku?: string
   price?: number
   stock?: number
+  sold?: number
   status?: string
   startedAt?: number
   selectedSpecs?: ProductSpec[]
@@ -287,6 +296,7 @@ function onGiftSubmit(payload: GiftSubmitPayload): void {
     keyword: payload.keyword,
     price: 0,
     stock: payload.quantity,
+    sold: 0,
     status: 'ready',
     specs: [],
     isGift: true,
@@ -342,11 +352,11 @@ function onBatchDelete(productIds: number[]): void {
 // ── 場次 ─────────────────────────────────────────
 const sessions = ref<LiveSession[]>([
   { id: 1, name: '春季首播', date: '2025/05/13', products: [
-    { id: 101, name: '草莓大福', sku: 'STRW-01', keyword: 'STRW', price: 120, stock: 50,
-      specs: [{ id: 1, name: '原味', stock: 30, sold: 12 }, { id: 2, name: '大份', stock: 20, sold: 8 }] },
-    { id: 102, name: '抹茶生乳捲蛋糕（季節限定）', sku: 'MTEA-02', keyword: 'MTEA', price: 280, stock: 30,
-      specs: [{ id: 1, name: '原味', stock: 18, sold: 6 }, { id: 2, name: '抹茶加倍', stock: 12, sold: 4 }] },
-    { id: 103, name: '限量小熊造型吊飾', sku: 'GIFT-01', keyword: 'BEAR', price: 0, stock: 20, isGift: true,
+    { id: 101, name: '草莓大福', sku: 'STRW-01', keyword: 'STRW', price: 120, stock: 50, sold: 0,
+      specs: [{ id: 1, name: '原味', stock: 30, sold: 0 }, { id: 2, name: '大份', stock: 20, sold: 0 }] },
+    { id: 102, name: '抹茶生乳捲蛋糕（季節限定）', sku: 'MTEA-02', keyword: 'MTEA', price: 280, stock: 30, sold: 0,
+      specs: [{ id: 1, name: '原味', stock: 18, sold: 0 }, { id: 2, name: '抹茶加倍', stock: 12, sold: 0 }] },
+    { id: 103, name: '限量小熊造型吊飾', sku: 'GIFT-01', keyword: 'BEAR', price: 0, stock: 20, sold: 0, isGift: true,
       note: '感謝大家支持，小熊送給你們！', specs: [] },
   ], sources: [] },
   { id: 2, name: '母親節特賣', date: '2025/05/10', products: [], sources: [] },
@@ -393,6 +403,7 @@ function onQuickAddProducts(payloads: QuickAddProductPayload[]): void {
       keyword: p.keyword,
       price: p.price,
       stock: p.stock,
+      sold: 0,
       status: 'ready',
       specs: [],
     })
@@ -423,7 +434,7 @@ function onAddProducts(products: LiveProduct[]): void {
   let added = 0
   products.forEach(p => {
     if (!ids.has(p.id)) {
-      target.push({ ...p, status: p.status || 'ready' })
+      target.push({ ...p, status: p.status || 'ready', sold: p.sold ?? 0 })
       added++
     }
   })
@@ -453,6 +464,27 @@ const statusCounts = computed(() => ({
   done: selectedProducts.value.filter(p => p.status === 'done').length,
 }))
 
+/**
+ * 銷售總計：當前場次「已成功下標」商品金額（禮物不列入）。
+ * 直接讀每商品實際的 `sold`（由 LiveProductCard 收單中 ticker 累計），
+ * 因此會隨商品卡上升、所有商品結束收單後自然停在該金額。
+ */
+const salesTotal = computed(() => {
+  return selectedProducts.value.reduce((sum, p) => {
+    if ((p as { isGift?: boolean }).isGift) return sum
+    const price = (p.price as number | undefined) ?? 0
+    const sold = (p.sold as number | undefined) ?? 0
+    return sum + price * sold
+  }, 0)
+})
+
+/** 銷售總計顯示：>= 1000 用 k 後綴（保留至多 1 位小數，去掉尾 .0），小於則直接千分位。圖示已是錢符號，數字前不重複加 $。 */
+const salesTotalDisplay = computed(() => {
+  const n = salesTotal.value
+  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, '')}k`
+  return n.toLocaleString()
+})
+
 const canPickSource = computed(() =>
   Boolean(currentSession.value) && selectedProducts.value.length > 0)
 
@@ -468,8 +500,13 @@ const pickSourceHelperText = computed(() => {
   return t('live_order.empty.click_button_below_to_pick_source')
 })
 
+/** 快速新增區的 component ref，用來在切到收單來源 dialog 時程式化收合。 */
+const quickAddRef = ref<{ collapse?: () => void } | null>(null)
+
 function onPickSource(): void {
   if (!canPickSource.value) return
+  // 點下「選擇收單來源」順手把快速新增收合，讓 dialog / 下方商品卡更聚焦
+  quickAddRef.value?.collapse?.()
   sourceDialogVisible.value = true
 }
 

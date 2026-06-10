@@ -25,6 +25,7 @@ export const productCatalog: CatalogProduct[] = [
   { id: 8,  name: 'JBL Flip 6 藍牙喇叭',     sku: 'AUD-JBL-006',   category: '耳機',     price: 2990,  stock: 25,  status: '已下架' },
   { id: 9,  name: 'iPad Pro M2 螢幕保護貼',  sku: 'ACC-IPD-007',   category: '配件',     price: 350,   stock: 200, status: '上架中' },
   { id: 10, name: 'ASUS ROG 電競滑鼠',       sku: 'GAM-ROG-008',   category: '電玩周邊', price: 1890,  stock: 10,  status: '已下架' },
+  { id: 11, name: '經典素色棉質 T 恤',        sku: 'CLO-TS-001',    category: '服飾',     price: 490,   stock: 138, status: '上架中' },
 ]
 
 /** 正規化名稱供比對：去頭尾空白、轉小寫。 */

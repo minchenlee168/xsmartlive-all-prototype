@@ -67,8 +67,7 @@
     <OrderDetailDialog
       v-model:visible="detailVisible"
       :comment="comment"
-      :product="orderMatch?.product ?? undefined"
-      :quantity="orderMatch?.quantity"
+      :items="detailItems"
       :platform-meta="platformMeta"
       @remove="onOrderRemoved" />
     <!-- 追加訂單 Dialog：挑選收單中的商品 -->
@@ -133,42 +132,114 @@ const toast = useToast()
 
 const isPinned    = computed(() => !!props.comment.pinned || props.comment.tagType === 'official')
 const isBlacklist = computed(() => props.comment.tagType === 'blacklist')
-const hasPlusOne  = computed(() => !isBlacklist.value && /\+\d+/.test(props.comment.text || ''))
 /** 透過「追加訂單」成功送出後標記為已下單（留言文字本身沒有「+N」） */
 const manuallyOrdered = ref(false)
 /** 訂單明細按「解除訂單」後本地標記，移除綠勾並把 action icon 切回「追加訂單」。 */
 const isOrderRemoved = ref(false)
-/** 已成功下標：留言含「+N」或追加訂單成功，且未被黑名單、未被解除；否則顯示「追加訂單」入口 */
-const hasOrdered  = computed(() =>
-  !isOrderRemoved.value
-  && (hasPlusOne.value || (!isBlacklist.value && manuallyOrdered.value)),
-)
+/** 「追加訂單」時記下使用者實際選的商品 / 數量；訂單明細彈窗會用這個列出。 */
+interface ManualItem { productId: number; qty: number }
+const manualOrderItems = ref<ManualItem[]>([])
 
 /**
- * 解析留言中的「{識別字}+{數量}」並配對到當前場次的商品（不限 status）。
+ * 解析留言中的「{關鍵字}(+{規格})+{數量}」並配對到當前場次的商品（不限 status）。
  *
- * 為什麼搜全場次而不只 liveProducts？訂單明細需要顯示留言對應的商品；
- * 即使該商品尚未按「開始收單」變 live，留言提到它就該對得上。
- * 是否算「已下單」（綠勾）由 hasPlusOne 判斷，跟這裡分離。
+ * **關鍵字**：商品卡上顯示的 tag 內容（`product.keyword`，或 fallback 用 `sku` 前綴）
  *
- * 識別字支援：
- * - 中文 / 全形商品名稱（例如「草莓大福+1」）→ 用 product.name 比對
- * - 英數關鍵字 / SKU 前綴（例如「STRW+1」）→ 用 keyword / sku 比對
+ * 成功配對條件：
+ * 1. 留言文字含 `+N`
+ * 2. 留言文字含某商品的關鍵字
+ * 3. **若該商品有規格**：留言文字必須再含其中一個規格 name 才算成立
+ *    **若該商品沒規格**：關鍵字 + 數量 即可成立
+ *
+ * 範例（綠勾）：
+ *  - 「STRW+1」（草莓大福無 specs 時）
+ *  - 「STRW 原味+1」 / 「我要一個 STRW 大份+2」
+ * 反例（不顯示綠勾）：
+ *  - 「STRW+1」但草莓大福有 specs（沒指定規格）
+ *  - 「abc+1」找不到任何 keyword
+ *  - 「STRW」沒有 +N
  */
-const orderMatch = computed(() => {
-  const m = (props.comment.text || '').match(/([^+\s]+)\+(\d+)/)
-  if (!m) return null
-  const identifier = m[1]
-  const quantity = Number(m[2])
-  // 配對來源：sessionProducts > liveProducts（向下相容仍只傳 liveProducts 的場合）
+const orderMatch = computed<null | {
+  keyword: string
+  quantity: number
+  product: LiveProductLike | null
+  spec: { id?: number; name?: string;[key: string]: unknown } | null
+  /** 競價成交價：留言出價 ≥ 商品 flatPrice（一刀價）時才有值，覆蓋訂單明細單價。 */
+  bidPrice?: number
+}>(() => {
+  const text = props.comment.text || ''
   const pool = props.sessionProducts.length > 0 ? props.sessionProducts : props.liveProducts
-  const product = pool.find(p =>
-    (p.name && p.name === identifier)
-    || (p.keyword && p.keyword === identifier)
-    || (p.sku && p.sku.split('-')[0] === identifier),
-  ) ?? null
-  return { keyword: identifier, quantity, product }
+
+  // ── 競價模式：留言格式「關鍵字 +(規格)+ 出價金額」（無 +N）；達到 flatPrice 才算成交。 ──
+  // 有規格的競價商品 → 留言必須含其中一個規格 name；沒規格 → 關鍵字 + 金額即可。
+  for (const p of pool) {
+    if (!(p as { bidding?: boolean }).bidding) continue
+    const kw = p.keyword || (p.sku ? p.sku.split('-')[0] : '')
+    if (!kw || !text.includes(kw)) continue
+
+    const flat = Number((p as { flatPrice?: number }).flatPrice ?? 0)
+    if (flat <= 0) continue
+
+    const specs = ((p as { selectedSpecs?: Array<{ name?: string }> }).selectedSpecs
+      ?? (p as { specs?: Array<{ name?: string }> }).specs ?? []) as Array<{ id?: number; name?: string;[k: string]: unknown }>
+
+    let matchedSpec: { id?: number; name?: string;[k: string]: unknown } | null = null
+    if (specs.length > 0) {
+      matchedSpec = specs.find((s) => s.name && text.includes(s.name)) ?? null
+      if (!matchedSpec) continue
+    }
+
+    // 抓留言裡的任一數字；只要有任一個 ≥ flatPrice 就算成交（一刀價）
+    const numbers = (text.match(/\d{1,7}/g) ?? []).map(Number)
+    const bidAmount = numbers.find((n) => n >= flat)
+    if (bidAmount === undefined) continue
+
+    return {
+      keyword: matchedSpec?.name ? `${kw} ${matchedSpec.name}` : kw,
+      quantity: 1,
+      product: p,
+      spec: matchedSpec,
+      bidPrice: bidAmount,
+    }
+  }
+
+  // ── 一般「+N」格式（含規格匹配） ──
+  const qtyMatch = text.match(/\+(\d+)/)
+  if (!qtyMatch) return null
+  const quantity = Number(qtyMatch[1])
+
+  for (const p of pool) {
+    // 競價商品不走 +N 流程（避免雙重判定）
+    if ((p as { bidding?: boolean }).bidding) continue
+    // 商品卡 tag 顯示的 keyword：優先 product.keyword、否則 sku 前綴
+    const kw = p.keyword || (p.sku ? p.sku.split('-')[0] : '')
+    if (!kw || !text.includes(kw)) continue
+
+    const specs = ((p as { selectedSpecs?: Array<{ name?: string }> }).selectedSpecs
+      ?? (p as { specs?: Array<{ name?: string }> }).specs ?? []) as Array<{ id?: number; name?: string;[k: string]: unknown }>
+
+    if (specs.length > 0) {
+      // 有規格 → 留言必須再帶到其中一個 spec name 才算成功下標
+      const matchedSpec = specs.find((s) => s.name && text.includes(s.name))
+      if (!matchedSpec) continue
+      return { keyword: `${kw} ${matchedSpec.name}`, quantity, product: p, spec: matchedSpec }
+    }
+    // 沒規格 → 關鍵字 + 數量 就成立
+    return { keyword: kw, quantity, product: p, spec: null }
+  }
+  return null
 })
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/** 已成功下標：留言對應到場次商品（pattern 1 或 2）或追加訂單成功；且未黑名單、未解除 */
+const hasOrdered = computed(() =>
+  !isOrderRemoved.value
+  && !isBlacklist.value
+  && (orderMatch.value !== null || manuallyOrdered.value),
+)
 
 const detailVisible = ref(false)
 const addOrderVisible = ref(false)
@@ -211,6 +282,7 @@ function onActionClick(): void {
 function onOrderRemoved(): void {
   isOrderRemoved.value = true
   manuallyOrdered.value = false
+  manualOrderItems.value = []
   toast.removeAllGroups()
   toast.add({
     severity: 'success',
@@ -220,10 +292,14 @@ function onOrderRemoved(): void {
   })
 }
 
-/** 追加訂單送出：mock 以 toast 回饋（實際串接時改為寫入訂單）。 */
+/** 追加訂單送出：mock 以 toast 回饋（實際串接時改為寫入訂單），同時記下商品供明細彈窗顯示。 */
 function onAddOrderSubmit(payload: AddOrderPayload): void {
+  // 解除過後重新送出 → 取消 isOrderRemoved，hasOrdered 才會重新亮綠勾
+  isOrderRemoved.value = false
   manuallyOrdered.value = true
-  toast.removeAllGroups();   toast.add({
+  manualOrderItems.value = payload.items.map((it) => ({ productId: it.productId, qty: it.qty }))
+  toast.removeAllGroups()
+  toast.add({
     severity: 'success',
     summary: t('live_order.toast.order_added'),
     detail: t('live_order.toast.order_added_detail', {
@@ -233,4 +309,53 @@ function onAddOrderSubmit(payload: AddOrderPayload): void {
     life: 2500,
   })
 }
+
+/**
+ * 訂單明細彈窗用的 items：
+ * - 留言匹配（orderMatch）→ 一筆，帶配對到的 product + spec + quantity；
+ *   spec 存在時用 spec.price / spec.name；沒 spec 就用 product.price
+ * - 追加訂單（manualOrderItems）→ 從 sessionProducts/liveProducts 查回 product 後展開
+ */
+interface DetailItemInput {
+  name: string
+  spec: string
+  qty: number
+  unitPrice: number
+  isGift?: boolean
+}
+const detailItems = computed<DetailItemInput[]>(() => {
+  const pool = props.sessionProducts.length > 0 ? props.sessionProducts : props.liveProducts
+  if (orderMatch.value) {
+    const { product, spec, quantity, bidPrice } = orderMatch.value
+    if (!product) return []
+    // 競價成交：以實際出價當單價；其他情況維持規格價 / 單品價
+    const unitPrice = bidPrice
+      ?? (spec?.price as number | undefined)
+      ?? (product.price as number | undefined)
+      ?? 0
+    return [{
+      name: (product.name as string | undefined) ?? '',
+      spec: (spec?.name as string | undefined) ?? '',
+      qty: quantity,
+      unitPrice,
+      isGift: !!(product as { isGift?: boolean }).isGift,
+    }]
+  }
+  if (manualOrderItems.value.length > 0) {
+    return manualOrderItems.value
+      .map((it): DetailItemInput | null => {
+        const p = pool.find((x) => x.id === it.productId)
+        if (!p) return null
+        return {
+          name: (p.name as string | undefined) ?? '',
+          spec: '',
+          qty: it.qty,
+          unitPrice: (p.price as number | undefined) ?? 0,
+          isGift: !!(p as { isGift?: boolean }).isGift,
+        }
+      })
+      .filter((x): x is DetailItemInput => x !== null)
+  }
+  return []
+})
 </script>

@@ -630,6 +630,7 @@ const productCategories = computed(() => [
   { label: t('live_order.category.gaming'),      value: '電玩周邊' },
   { label: t('live_order.category.accessory'),   value: '配件' },
   { label: t('live_order.category.headphone'),   value: '耳機' },
+  { label: t('live_order.category.apparel'),     value: '服飾' },
 ])
 // 規格價格刻意拉開（模擬同商品不同規格各自不同售價）：商品卡可顯示價格區間。
 const pickerSpecsMap: Record<number, PickerSpec[]> = {
@@ -649,6 +650,20 @@ const pickerSpecsMap: Record<number, PickerSpec[]> = {
   7: [
     { id: 701, name: '黑色 / 青軸', sku: 'GAM-RZR-010-BK-CY', cost: 2100, originalPrice: 4200, price: 3500, stock: 5 },
     { id: 702, name: '白色 / 紅軸', sku: 'GAM-RZR-010-WH-RD', cost: 2400, originalPrice: 4800, price: 3980, stock: 3 },
+  ],
+  11: [
+    { id: 1101, name: 'S / 白',    sku: 'CLO-TS-001-S-WH',   cost: 180, originalPrice: 590, price: 490, stock: 20 },
+    { id: 1102, name: 'S / 黑',    sku: 'CLO-TS-001-S-BK',   cost: 180, originalPrice: 590, price: 490, stock: 18 },
+    { id: 1103, name: 'M / 白',    sku: 'CLO-TS-001-M-WH',   cost: 180, originalPrice: 590, price: 490, stock: 25 },
+    { id: 1104, name: 'M / 黑',    sku: 'CLO-TS-001-M-BK',   cost: 180, originalPrice: 590, price: 490, stock: 22 },
+    { id: 1105, name: 'L / 白',    sku: 'CLO-TS-001-L-WH',   cost: 180, originalPrice: 590, price: 490, stock: 15 },
+    { id: 1106, name: 'L / 黑',    sku: 'CLO-TS-001-L-BK',   cost: 180, originalPrice: 590, price: 490, stock: 10 },
+    { id: 1107, name: 'XL / 白',   sku: 'CLO-TS-001-XL-WH',  cost: 180, originalPrice: 590, price: 490, stock: 8 },
+    { id: 1108, name: 'XL / 黑',   sku: 'CLO-TS-001-XL-BK',  cost: 180, originalPrice: 590, price: 490, stock: 6 },
+    { id: 1109, name: 'XL / 灰',   sku: 'CLO-TS-001-XL-GY',  cost: 200, originalPrice: 620, price: 510, stock: 5 },
+    { id: 1110, name: 'XL / 海軍藍', sku: 'CLO-TS-001-XL-NV',  cost: 200, originalPrice: 620, price: 510, stock: 4 },
+    { id: 1111, name: 'XXL / 黑',  sku: 'CLO-TS-001-XXL-BK', cost: 210, originalPrice: 640, price: 530, stock: 3 },
+    { id: 1112, name: 'XXL / 灰',  sku: 'CLO-TS-001-XXL-GY', cost: 210, originalPrice: 640, price: 530, stock: 2 },
   ],
 }
 const pickerProductsRaw: PickerProductRaw[] = productCatalog

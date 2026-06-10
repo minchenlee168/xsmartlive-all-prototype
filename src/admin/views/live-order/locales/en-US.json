@@ -26,6 +26,7 @@
       "stock_with_value": "Stock: {value}",
       "sold_with_value": "Sold: {value}",
       "subtotal_with_value": "Subtotal: ${value}",
+      "sales_total": "Sales total",
       "spec_summary": "Sold: {sold} | Stock: {stock}",
       "spec_label": "Spec: {name}",
       "all_specs": "All specs ({count})",
@@ -184,6 +185,7 @@
       "sku": "SKU"
     },
     "category": {
+      "apparel": "Apparel",
       "electronics": "3C Electronics",
       "gaming": "Gaming",
       "accessory": "Accessory",
@@ -243,7 +245,8 @@
         "none": "None",
         "product_n": "Product {code}",
         "checkout_paid": "Paid",
-        "checkout_unpaid": "Unpaid"
+        "checkout_unpaid": "Unpaid",
+        "checkout_not_required": "No payment required"
       }
     },
     "dialog": {
@@ -315,6 +318,7 @@
       "order_removed_detail": "Removed {user}'s order"
     },
     "tooltip": {
+      "sales_total": "Total amount of successfully ordered products in current session (gifts excluded)",
       "pick_source_first": "Please pick or create a session first",
       "no_live_product": "No live products",
       "pick_or_create_session": "Please pick or create a session above first",
@@ -349,8 +353,8 @@
       "no_session_product": "No products in this session",
       "no_matching_product": "No matching products",
       "no_product_added_hint": "No products added — click \"Add product\" above",
-      "no_live_product_yet": "No products are live yet",
-      "comments_will_show": "Comments will load once a product is live",
+      "no_live_product_yet": "Ordering hasn't started yet",
+      "comments_will_show": "Please pick an order source first, then press \"Start ordering\" on a product card",
       "no_source_added": "No order sources added",
       "no_order": "No orders yet",
       "no_live_product": "No products are live yet",

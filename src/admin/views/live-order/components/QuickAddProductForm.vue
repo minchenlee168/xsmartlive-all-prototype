@@ -83,6 +83,13 @@ function onSubmit(): void {
   resetRows()
   isExpanded.value = false
 }
+
+/** 給父層程式化收合用（例：點下「選擇收單來源」時收起快速新增區）。 */
+function collapse(): void {
+  isExpanded.value = false
+}
+
+defineExpose({ collapse })
 </script>
 
 <template>

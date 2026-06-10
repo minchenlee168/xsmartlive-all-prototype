@@ -84,10 +84,13 @@
       <div class="flex flex-col gap-3">
         <div class="flex items-center justify-between">
           <span class="text-[13px] text-[var(--p-text-muted-color)]">{{ t('live_order.label.checkout_status') }}</span>
-          <Tag severity="warn" rounded>
+          <!-- 禮物商品訂單顯示「無需結帳」（secondary），其他維持「未結帳」(warn) -->
+          <Tag :severity="detail.isGiftOrder ? 'secondary' : 'warn'" rounded>
             <span class="flex items-center gap-1.5">
               <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
-              {{ t('live_order.table.value.checkout_unpaid') }}
+              {{ detail.isGiftOrder
+                ? t('live_order.table.value.checkout_not_required')
+                : t('live_order.table.value.checkout_unpaid') }}
             </span>
           </Tag>
         </div>
@@ -195,30 +198,27 @@ interface PlatformMeta {
   platformColor: string
 }
 
-interface OrderedProduct {
-  id?: number
-  name?: string
-  price?: number
-  keyword?: string
-  sku?: string
-  specs?: Array<{ name?: string; [key: string]: unknown }>
-  [key: string]: unknown
+/** 由 LiveCommentCard 算好餵進來的訂單明細項；對應留言匹配 (orderMatch) 或追加訂單 (manualOrder) */
+export interface DetailItemInput {
+  name: string
+  spec: string
+  qty: number
+  unitPrice: number
+  /** 該項是否為禮物商品；任一項為 true → 結帳狀態顯示「無需結帳」 */
+  isGift?: boolean
 }
 
 interface Props {
   visible?: boolean
   comment: LiveComment
-  /** 配對到的收單中商品卡；有值時優先顯示其名稱/售價/規格 */
-  product?: OrderedProduct
-  /** 下單數量（取自留言「+N」） */
-  quantity?: number
+  /** 由父層算好的訂單項；orderMatch 一筆、追加訂單多筆。沒項目 → 顯示 mock fallback */
+  items?: DetailItemInput[]
   /** 保留以相容呼叫端；本卡片不再顯示平台圖示 */
   platformMeta?: PlatformMeta
 }
 const props = withDefaults(defineProps<Props>(), {
   visible: false,
-  product: undefined,
-  quantity: undefined,
+  items: () => [],
   platformMeta: undefined,
 })
 
@@ -234,8 +234,7 @@ function onRemove(): void {
   onVisibleChange(false)
 }
 
-// items 對應留言實際匹配到的商品；layout 支援多筆，目前一張留言匹配一筆商品 → 1 item，
-// 沒匹配時 fallback 一筆 mock 商品（避免畫面整片空白）。
+// 內部列項型別：在 DetailItemInput 之上加 id / subtotal（v-for / 顯示用）
 interface DetailItem {
   id: number
   name: string
@@ -243,6 +242,7 @@ interface DetailItem {
   qty: number
   unitPrice: number
   subtotal: number
+  isGift: boolean
 }
 
 const MOCK_PRODUCTS = [
@@ -255,37 +255,40 @@ const MOCK_PRODUCTS = [
 
 const detail = computed(() => {
   const c = props.comment
-  const p = props.product
   const idNum = typeof c.id === 'number' ? c.id : Number(c.id) || 0
   const seedSource = `${c.id ?? ''}${c.text ?? ''}` || 'x'
   const seed = seedSource.split('').reduce((a, ch) => a + ch.charCodeAt(0), 0)
 
-  // 數量：優先 props.quantity → 留言「+N」→ 1
-  const parsedQty = Number((c.text ?? '').match(/\+(\d+)/)?.[1])
-  const qty = props.quantity ?? (Number.isFinite(parsedQty) ? parsedQty : 1)
-
-  // 訂單商品：原則上 1 筆 = 1 個被匹配到的收單商品（與留言內容對應）；
-  // 找不到匹配時用 mock 補一筆避免空白
-  const fallback = MOCK_PRODUCTS[seed % MOCK_PRODUCTS.length]
-  const unitPrice = p?.price ?? fallback.unit
-  const name = p?.name ?? fallback.name
-  const spec = p
-    ? (p.specs ?? []).map((s) => s?.name).filter(Boolean).join(' / ')
-    : fallback.spec
-
-  const items: DetailItem[] = [
-    {
+  let items: DetailItem[]
+  if (props.items.length > 0) {
+    // 由父層餵入：忠實對應留言匹配（含 spec、spec.price）或追加訂單
+    items = props.items.map((it, i) => ({
+      id: (idNum || seed) + i,
+      name: it.name,
+      spec: it.spec,
+      qty: it.qty,
+      unitPrice: it.unitPrice,
+      subtotal: it.unitPrice * it.qty,
+      isGift: !!it.isGift,
+    }))
+  } else {
+    // 完全找不到對應 → 用 mock 一筆避免空白
+    const fallback = MOCK_PRODUCTS[seed % MOCK_PRODUCTS.length]
+    items = [{
       id: idNum || seed,
-      name,
-      spec,
-      qty,
-      unitPrice,
-      subtotal: unitPrice * qty,
-    },
-  ]
+      name: fallback.name,
+      spec: fallback.spec,
+      qty: 1,
+      unitPrice: fallback.unit,
+      subtotal: fallback.unit,
+      isGift: false,
+    }]
+  }
 
   const totalCount = items.reduce((sum, it) => sum + it.qty, 0)
   const totalAmount = items.reduce((sum, it) => sum + it.subtotal, 0)
+  // 整單若所有項皆為禮物（且至少 1 項）→ 結帳狀態顯示「無需結帳」
+  const isGiftOrder = items.length > 0 && items.every((it) => it.isGift)
   const user = c.user ?? ''
 
   return {
@@ -293,6 +296,7 @@ const detail = computed(() => {
     items,
     totalCount,
     totalAmount,
+    isGiftOrder,
     keyword: c.text ?? '',
     memberName: user,
     initial: user.trim().charAt(0).toUpperCase() || '?',

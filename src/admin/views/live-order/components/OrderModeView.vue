@@ -1,10 +1,10 @@
 <template>
   <!-- 收單操作頁（多收單來源） -->
   <!-- 左：(slot products-header) + 商品 grid；右(可隱藏)：Tabs(留言區 / 收單來源) 340px -->
-  <div class="flex gap-4 flex-1 min-h-0">
+  <div class="flex gap-2 flex-1 min-h-0">
 
     <!-- 左：商品 grid -->
-    <div class="flex-1 min-w-0 flex flex-col gap-4 min-h-0">
+    <div class="flex-1 min-w-0 flex flex-col gap-2 min-h-0">
       <!-- 頂部 slot：給 LiveOrderPage 放 QuickAddProductForm，與右側 panel 頂部對齊 -->
       <slot name="products-header" />
 
@@ -13,11 +13,12 @@
           <i class="pi pi-inbox" style="font-size:40px"></i>
           <span class="text-[13px]">{{ t('live_order.empty.no_product_added_hint') }}</span>
         </div>
-        <div v-else class="grid gap-2 justify-start" style="grid-template-columns: repeat(auto-fill, 240px)">
+        <div v-else class="grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(232px, 1fr))">
           <LiveProductCard
             v-for="p in products"
             :key="p.id"
             :product="p"
+            :ordering-enabled="sources.length > 0"
             v-model:status="p.status"
             @delete="(id) => emit('delete-product', id)"
           />
@@ -84,7 +85,7 @@
 
           <!-- 留言區 Tab：混合多平台（須有商品開始收單才顯示） -->
           <TabPanel v-if="showComments" value="comments" class="flex-1 min-h-0 flex flex-col gap-2 overflow-y-auto pt-3 pr-1 !bg-transparent">
-            <template v-if="hasLiveProduct">
+            <template v-if="hasOrderingStarted">
               <LiveCommentCard v-for="c in filteredComments" :key="c.id"
                 :comment="c"
                 :platform-meta="getPlatformMeta(c.platform)"
@@ -95,8 +96,7 @@
             </template>
             <div v-else class="flex flex-col items-center gap-2 text-[var(--p-text-muted-color)] pt-8">
               <i class="pi pi-comments" style="font-size:32px"></i>
-              <span class="text-[12.25px]">{{ t('live_order.empty.no_live_product_yet') }}</span>
-              <span class="text-[13px] text-[var(--p-text-color)]">{{ t('live_order.empty.comments_will_show') }}</span>
+              <span class="text-[13px] text-[var(--p-text-color)]">{{ t('live_order.empty.no_live_product_yet') }}</span>
             </div>
           </TabPanel>
 
@@ -221,6 +221,11 @@ watch(() => props.showComments, (show) => {
 
 // 是否有商品已開始收單（status === 'live'）— 留言區顯示條件
 const hasLiveProduct = computed(() => props.products.some(p => p.status === 'live'))
+/**
+ * 一旦任一商品開始收單（live）或已結束收單（done），就算「收單已啟動」。
+ * 結束收單後若收單來源還在，仍可繼續查看留言；只有全部商品都還在 'ready' 時才顯示等待空狀態。
+ */
+const hasOrderingStarted = computed(() => props.products.some(p => p.status === 'live' || p.status === 'done'))
 
 // 收單中的商品 — 供留言卡「追加訂單」挑選
 const liveProducts = computed(() => props.products.filter(p => p.status === 'live'))
@@ -280,42 +285,104 @@ watch(() => previewableSources.value.length, (n) => {
   if (previewIndex.value >= n) previewIndex.value = Math.max(0, n - 1)
 })
 
-// 多平台留言 mock：留言文字直接用「{商品名稱}+數量」對應到商品卡，跟商品名稱一致。
-// 模板的 {nameN} 由「當前場次商品」的 name 循環填入，**非禮物商品優先**。
-// 真正的「已下單」判定（orderMatch）仍只看 status==='live' 的商品。
-const fallbackName = '直播商品'
-const currentNames = computed<string[]>(() => {
-  const all = props.products
-    .map(p => ({ name: (p?.name as string | undefined) ?? '', isGift: !!(p as { isGift?: boolean })?.isGift }))
-    .filter((x): x is { name: string; isGift: boolean } => Boolean(x.name))
-  const nonGift = all.filter(x => !x.isGift).map(x => x.name)
-  const gift = all.filter(x => x.isGift).map(x => x.name)
-  const list = [...nonGift, ...gift]
-  return list.length > 0 ? list : [fallbackName]
-})
-const commentTemplates: LiveComment[] = [
-  { id: 1, user: '粉絲團小編',       text: '最後1分鐘～',         platform: 'fb',    tagType: 'official', pinned: true,  time: '2025-12-17 20:48:07' },
-  { id: 2, user: 'Haji Abdul Mali…', text: '{name0}+1',           platform: 'fb',    stars: 3,             time: '2025-12-17 20:48:07' },
-  { id: 3, user: '陳大悅',           text: '早安',                platform: 'ig',    stars: 3,             time: '2025-12-17 20:48:07' },
-  { id: 4, user: '王大天',           text: '{name1}+1',           platform: 'live',  stars: 3,             time: '2025-12-17 20:48:07' },
-  { id: 5, user: 'Jade Liu',         text: '{name2}+1',           platform: 'ig',    tagType: 'blacklist', time: '2025-12-17 20:48:07' },
-  { id: 6, user: '張曉明',           text: '{name0}+1',           platform: 'group', tagType: 'vip',       time: '2025-12-17 20:48:07' },
-  { id: 7, user: '林小美',           text: '{name1}+3',           platform: 'fb',    stars: 2,             time: '2025-12-17 20:49:12' },
-  { id: 8, user: '蔡先生',           text: '我要一件 {name2}+1',  platform: 'live',  stars: 4,             time: '2025-12-17 20:49:30' },
-]
-/** 把模板裡的 {nameN} 換成第 N 個商品名稱（循環取用）。 */
-function applyNames(text: string, names: string[]): string {
-  return text.replace(/\{name(\d+)\}/g, (_, i) => names[Number(i) % names.length])
+// 多平台留言 mock：模板支援
+//   {kwN}           → 第 N 個商品的關鍵字（非禮物優先）
+//   {kwN-specM}     → 第 N 個商品的第 M 個規格名稱
+//   {nameN}         → 第 N 個商品名稱（向下相容用）
+// 這樣不同場次商品（不同關鍵字 / 規格）都能即時換掉，且符合 orderMatch
+// 「關鍵字 + (規格) + 數量」的判定規則。
+interface ProductLite {
+  name: string
+  keyword: string
+  isGift: boolean
+  bidding: boolean
+  flatPrice: number
+  specs: string[]
 }
-const comments = ref<LiveComment[]>(commentTemplates.map(c => ({ ...c })))
-watch(currentNames, names => {
-  comments.value = commentTemplates.map(c => ({ ...c, text: applyNames(c.text, names) }))
+const currentProducts = computed<ProductLite[]>(() => {
+  const list = props.products.map((p) => {
+    const sku = (p as { sku?: string }).sku ?? ''
+    return {
+      name: (p as { name?: string }).name ?? '',
+      keyword: (p as { keyword?: string }).keyword ?? (sku.split('-')[0] || ''),
+      isGift: !!(p as { isGift?: boolean }).isGift,
+      bidding: !!(p as { bidding?: boolean }).bidding,
+      flatPrice: Number((p as { flatPrice?: number }).flatPrice ?? 0),
+      specs: (((p as { selectedSpecs?: Array<{ name?: string }> }).selectedSpecs
+        ?? (p as { specs?: Array<{ name?: string }> }).specs ?? [])
+        .map((s) => s?.name ?? '')
+        .filter(Boolean)) as string[],
+    }
+  }).filter((x) => x.keyword)
+  // 非禮物商品優先
+  return [...list.filter((x) => !x.isGift), ...list.filter((x) => x.isGift)]
+})
+
+/** 找出當前場次第一個競價中且有設一刀價的商品（給 {bidhit}/{bidlow} 模板用）。 */
+const firstBiddingProduct = computed(() =>
+  currentProducts.value.find((x) => x.bidding && x.flatPrice > 0) ?? null,
+)
+
+const commentTemplates: LiveComment[] = [
+  { id: 1,  user: '粉絲團小編',        text: '最後1分鐘～',                  platform: 'fb',    tagType: 'official', pinned: true, time: '2025-12-17 20:48:07' },
+  { id: 2,  user: 'Haji Abdul Mali…',  text: '{kw0} {kw0-spec0}+1',          platform: 'fb',    stars: 3,             time: '2025-12-17 20:48:07' },
+  { id: 3,  user: '陳大悅',            text: '早安',                         platform: 'ig',    stars: 3,             time: '2025-12-17 20:48:07' },
+  { id: 4,  user: '王大天',            text: '{kw1} {kw1-spec1}+1',          platform: 'live',  stars: 3,             time: '2025-12-17 20:48:07' },
+  { id: 5,  user: 'Jade Liu',          text: '{kw0} {kw0-spec1}+2',          platform: 'ig',    tagType: 'blacklist', time: '2025-12-17 20:48:07' },
+  { id: 6,  user: '張曉明',            text: '{kw2}+1',                      platform: 'group', tagType: 'vip',       time: '2025-12-17 20:48:07' },
+  { id: 7,  user: '林小美',            text: '{kw1} {kw1-spec0}+3',          platform: 'fb',    stars: 2,             time: '2025-12-17 20:49:12' },
+  { id: 8,  user: '蔡先生',            text: '我要一件 {kw0} {kw0-spec0}+1', platform: 'live',  stars: 4,             time: '2025-12-17 20:49:30' },
+  { id: 9,  user: '黃媽媽',            text: '{kw1} {kw1-spec1}+2',          platform: 'fb',    stars: 5,             time: '2025-12-17 20:49:45' },
+  { id: 10, user: '阿志',              text: '{kw2}+2',                      platform: 'live',  stars: 3,             time: '2025-12-17 20:50:01' },
+  { id: 11, user: '小美',              text: '{kw0} {kw0-spec1}+1',          platform: 'ig',    stars: 4,             time: '2025-12-17 20:50:15' },
+  { id: 12, user: '阿明',              text: '+1 {kw1} {kw1-spec0}',         platform: 'group', stars: 3,             time: '2025-12-17 20:50:32' },
+  { id: 13, user: '小芳',              text: '{kw2}+3 謝謝',                 platform: 'fb',    stars: 4,             time: '2025-12-17 20:50:48' },
+  // 競價模板：達一刀價 → 綠勾；未達 → 只是出價，不亮綠勾
+  { id: 14, user: '競價快手',          text: '{bidhit}',                     platform: 'fb',    stars: 5,             time: '2025-12-17 20:51:02' },
+  { id: 15, user: '小李',              text: '{bidlow}',                     platform: 'live',  stars: 3,             time: '2025-12-17 20:51:18' },
+]
+
+/**
+ * 把 placeholder 換成商品實際值：
+ * - `{kwN}` / `{kwN-specM}` / `{nameN}`：第 N 個商品的關鍵字 / 規格 / 名稱
+ * - `{bidhit}`：第一個競價商品的「關鍵字 + 一刀價」（達標 → 留言卡綠勾）
+ * - `{bidlow}`：第一個競價商品的「關鍵字 + 一刀價 × 0.7」（未達 → 不亮綠勾）
+ *
+ * 沒有對應商品時 placeholder 直接吃掉成空字串；filteredComments 會濾掉空文字。
+ */
+function applyTemplate(text: string, products: ProductLite[], bidProduct: ProductLite | null): string {
+  if (products.length === 0) return text
+  const pick = (i: number) => products[Number(i) % products.length]
+  return text
+    .replace(/\{kw(\d+)-spec(\d+)\}/g, (_, pi, si) => {
+      const p = pick(Number(pi))
+      const specs = p?.specs ?? []
+      return specs.length > 0 ? (specs[Number(si) % specs.length] ?? '') : ''
+    })
+    .replace(/\{kw(\d+)\}/g, (_, i) => pick(Number(i))?.keyword ?? '')
+    .replace(/\{name(\d+)\}/g, (_, i) => pick(Number(i))?.name ?? '')
+    .replace(/\{bidhit\}/g, () => {
+      if (!bidProduct) return ''
+      const specStr = bidProduct.specs.length > 0 ? ` ${bidProduct.specs[0]}` : ''
+      return `${bidProduct.keyword}${specStr} ${bidProduct.flatPrice}`
+    })
+    .replace(/\{bidlow\}/g, () => {
+      if (!bidProduct) return ''
+      const specStr = bidProduct.specs.length > 0 ? ` ${bidProduct.specs[0]}` : ''
+      const amount = Math.max(0, Math.floor(bidProduct.flatPrice * 0.7))
+      return `${bidProduct.keyword}${specStr} ${amount}`
+    })
+}
+
+const comments = ref<LiveComment[]>(commentTemplates.map((c) => ({ ...c })))
+watch([currentProducts, firstBiddingProduct], ([list, bid]) => {
+  comments.value = commentTemplates.map((c) => ({ ...c, text: applyTemplate(c.text, list, bid) }))
 }, { immediate: true, deep: true })
 
-// 留言只顯示來自當前場次已加入收單來源的平台
+// 留言只顯示來自當前場次已加入收單來源的平台；競價模板無對應商品時 text 為空，過濾掉避免空卡
 const activeSourceTypes = computed(() => new Set(props.sources.map(s => s.type)))
 const filteredComments = computed(() =>
-  comments.value.filter(c => activeSourceTypes.value.has(c.platform))
+  comments.value.filter((c) => activeSourceTypes.value.has(c.platform) && c.text.trim().length > 0)
 )
 
 
