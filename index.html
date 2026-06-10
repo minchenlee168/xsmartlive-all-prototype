@@ -4,6 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>直播管家商城</title>
+    <script>
+      // GitHub Pages SPA fallback：404.html 把原 URL 寫進 sessionStorage 後跳回根；
+      // 這裡在 vue-router 啟動前先 history.replaceState 把 URL 還原，router 就能匹配原 path。
+      (function () {
+        var redirect = sessionStorage.spaRedirect
+        if (redirect) {
+          delete sessionStorage.spaRedirect
+          if (redirect !== location.href) {
+            history.replaceState(null, '', redirect)
+          }
+        }
+      })()
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <title>直播管家商城</title>
+    <!--
+      GitHub Pages SPA fallback：所有未匹配的路徑（例如 /xsmartlive-all-prototype/lottery/draw/L001）
+      都會落到這頁。把原 URL 記到 sessionStorage 後 redirect 回 index.html，
+      index.html 的 inline script 會還原 history 並交給 vue-router 接手。
+    -->
+    <script>
+      (function () {
+        var BASE = '/xsmartlive-all-prototype/'
+        sessionStorage.spaRedirect = location.href
+        location.replace(BASE)
+      })()
+    </script>
+  </head>
+  <body></body>
+</html>
