@@ -9,9 +9,9 @@ const { t } = useI18n()
 const themeStore = useThemeStore()
 const { isDark } = storeToRefs(themeStore)
 
-const buttonIcon = computed(() => (isDark.value ? 'moon' : 'sun'))
+const buttonIcon = computed(() => (isDark.value ? 'moon' : 'sun-bright'))
 const options = computed(() => [
-  { label: t('common.theme.light'), value: 'light', icon: 'sun' },
+  { label: t('common.theme.light'), value: 'light', icon: 'sun-bright' },
   { label: t('common.theme.dark'), value: 'dark', icon: 'moon' },
 ])
 

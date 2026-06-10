@@ -55,8 +55,8 @@ const isConstrained = computed(() => !isFullscreen.value && !!viewportStore.curr
   <!-- 換頁 loading 遮罩 -->
   <PageLoading />
 
-  <!-- PrimeVue 全域 Toast -->
-  <Toast />
+  <!-- PrimeVue 全域 Toast：靠上置中、一次只顯示一個（add 前會 removeAllGroups） -->
+  <Toast position="top-center" />
 
 
   <!-- Global toast -->

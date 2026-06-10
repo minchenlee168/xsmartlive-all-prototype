@@ -4,7 +4,7 @@
     modal
     :draggable="false"
     :dismissable-mask="true"
-    :style="{ width: '420px' }"
+    :style="{ width: '480px' }"
     :pt="{
       header: { style: 'padding: 18px 20px' },
       content: { style: 'padding: 0' },
@@ -21,84 +21,148 @@
       </div>
     </template>
 
-    <!-- 商品區 -->
-    <div class="flex flex-col items-center gap-2 px-5 pt-2 pb-6">
-      <div class="w-[72px] h-[72px] rounded-[14px] bg-[var(--p-primary-50)] flex items-center justify-center mb-1">
-        <i class="pi pi-shopping-bag text-[var(--p-primary-color)]" style="font-size: 28px"></i>
-      </div>
-      <div class="text-[18px] font-bold text-[var(--p-text-color)] text-center">{{ detail.productName }}</div>
-      <div v-if="detail.variant" class="text-[13px] text-[var(--p-text-muted-color)] text-center">{{ detail.variant }}</div>
-      <div class="flex items-baseline gap-1 mt-1">
-        <span class="text-[14px] text-[var(--p-text-muted-color)]">{{ t('live_order.label.currency_ntd') }}</span>
-        <span class="text-[30px] font-bold text-[var(--p-primary-color)] leading-none">{{ detail.amount.toLocaleString() }}</span>
-      </div>
-      <div class="text-[12px] text-[var(--p-text-muted-color)]">
-        {{ t('live_order.label.unit_price') }} {{ detail.unitPrice.toLocaleString() }} ·
-        {{ t('live_order.table.column.qty') }} {{ detail.qty }}
-      </div>
-      <Tag severity="warn" rounded class="mt-2">
-        <span class="flex items-center gap-1.5">
-          <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
-          {{ t('live_order.table.value.checkout_unpaid') }}
+    <!-- 商品明細區 -->
+    <section class="px-5 pt-2">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-[14px] font-semibold text-[var(--p-text-color)]">
+          {{ t('live_order.label.product_detail') }}
         </span>
-      </Tag>
+        <span class="text-[12px] text-[var(--p-text-muted-color)]">
+          {{ t('live_order.label.total_items', { count: detail.totalCount }) }}
+        </span>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <div
+          v-for="(item, i) in detail.items"
+          :key="item.id ?? i"
+          class="flex items-start gap-3"
+        >
+          <!-- 圖片 + index 角標 -->
+          <div class="relative w-[44px] h-[44px] rounded-[10px] bg-[var(--p-primary-50)] flex items-center justify-center shrink-0">
+            <FontAwesomeIcon :icon="['far', 'bag-shopping']" class="text-[var(--p-primary-color)] text-[18px]" />
+            <span class="absolute -top-1 -left-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--p-primary-color)] text-white text-[10px] font-bold flex items-center justify-center">
+              {{ i + 1 }}
+            </span>
+          </div>
+          <!-- 名稱 + 規格 + 價數量 -->
+          <div class="flex-1 min-w-0 flex justify-between gap-3">
+            <div class="min-w-0 flex flex-col">
+              <span class="text-[14px] font-medium text-[var(--p-text-color)] truncate">{{ item.name }}</span>
+              <span v-if="item.spec" class="text-[12px] text-[var(--p-text-muted-color)] truncate">{{ item.spec }}</span>
+            </div>
+            <div class="flex flex-col items-end shrink-0">
+              <span class="text-[14px] font-bold text-[var(--p-text-color)]">
+                {{ t('live_order.label.currency_ntd') }} {{ item.subtotal.toLocaleString() }}
+              </span>
+              <span class="text-[12px] text-[var(--p-text-muted-color)]">
+                {{ item.unitPrice.toLocaleString() }} × {{ item.qty }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 訂單金額 highlight row -->
+    <div class="mx-5 my-4 px-3 py-2.5 rounded-[8px] bg-[var(--p-primary-50)] flex items-center justify-between">
+      <span class="text-[14px] font-semibold text-[var(--p-text-color)]">
+        {{ t('live_order.label.order_amount') }}
+      </span>
+      <span class="text-[20px] font-bold text-[var(--p-primary-color)]">
+        {{ t('live_order.label.currency_ntd') }} {{ detail.totalAmount.toLocaleString() }}
+      </span>
     </div>
 
     <Divider class="!m-0" />
 
-    <!-- 訂單 meta 區 -->
-    <div class="flex flex-col gap-4 px-5 py-5">
-      <div class="flex items-center justify-between">
-        <span class="text-[13px] text-[var(--p-text-muted-color)]">{{ t('live_order.table.column.created_at') }}</span>
-        <span class="text-[13px] text-[var(--p-text-color)]">
-          {{ detail.createdAt }}<template v-if="detail.daysAgo !== null"> · {{ t('live_order.text.days_ago', { n: detail.daysAgo }) }}</template>
-        </span>
+    <!-- 訂單資訊 -->
+    <section class="px-5 pt-4">
+      <div class="text-[14px] font-semibold text-[var(--p-text-color)] mb-3">
+        {{ t('live_order.label.order_info') }}
       </div>
-
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0">
-          <Avatar :label="detail.initial" shape="circle" class="!bg-[var(--p-primary-color)] !text-white shrink-0" />
-          <div class="flex flex-col min-w-0">
-            <span class="text-[15px] font-semibold text-[var(--p-text-color)] truncate">{{ detail.memberName }}</span>
-            <span class="text-[12px] text-[var(--p-text-muted-color)]">
-              {{ detail.isVip ? t('live_order.label.vip_member') : t('live_order.label.regular_member') }}
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <span class="text-[13px] text-[var(--p-text-muted-color)]">{{ t('live_order.label.checkout_status') }}</span>
+          <Tag severity="warn" rounded>
+            <span class="flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+              {{ t('live_order.table.value.checkout_unpaid') }}
             </span>
-          </div>
+          </Tag>
         </div>
-        <Button
-          :label="t('live_order.button.view_member')"
-          icon="pi pi-angle-right"
-          icon-pos="right"
-          variant="link"
-          class="!px-0 shrink-0"
-        />
+        <div class="flex items-center justify-between">
+          <span class="text-[13px] text-[var(--p-text-muted-color)]">{{ t('live_order.table.column.created_at') }}</span>
+          <span class="text-[13px] text-[var(--p-text-color)]">
+            {{ detail.createdAt }}<template v-if="detail.daysAgo !== null">
+              <span class="text-[var(--p-text-muted-color)] ml-1">
+                {{ t('live_order.text.days_ago', { n: detail.daysAgo }) }}
+              </span>
+            </template>
+          </span>
+        </div>
       </div>
+    </section>
 
-      <div class="flex flex-col gap-1.5">
-        <div class="flex items-center gap-2">
-          <i class="pi pi-comment text-[var(--p-text-muted-color)]" style="font-size: 14px"></i>
-          <Chip
-            :label="detail.keyword"
-            :pt="{
-              root: { class: 'bg-[var(--p-primary-50)] py-1 px-3' },
-              label: { class: 'text-[var(--p-primary-color)] font-medium text-[13px]' },
-            }"
-          />
-        </div>
-        <span class="text-[12px] text-[var(--p-text-muted-color)] pl-6">{{ t('live_order.text.keyword_auto_order') }}</span>
+    <Divider class="!m-0 mt-4" />
+
+    <!-- 會員與來源 -->
+    <section class="px-5 py-4">
+      <div class="text-[14px] font-semibold text-[var(--p-text-color)] mb-3">
+        {{ t('live_order.label.member_and_source') }}
       </div>
-    </div>
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3 min-w-0">
+            <Avatar :label="detail.initial" shape="circle" class="!bg-[var(--p-primary-color)] !text-white shrink-0" />
+            <div class="flex flex-col min-w-0">
+              <span class="text-[15px] font-semibold text-[var(--p-text-color)] truncate">{{ detail.memberName }}</span>
+              <span class="text-[12px] text-[var(--p-text-muted-color)]">
+                {{ detail.isVip ? t('live_order.label.vip_member') : t('live_order.label.regular_member') }}
+              </span>
+            </div>
+          </div>
+          <Button
+            :label="t('live_order.button.view_member')"
+            variant="link"
+            class="!px-0 shrink-0"
+          >
+            <template #icon>
+              <FontAwesomeIcon :icon="['far', 'angle-right']" class="ml-1" />
+            </template>
+          </Button>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <div class="flex items-center gap-2">
+            <FontAwesomeIcon :icon="['far', 'comment']" class="text-[var(--p-text-muted-color)] text-[14px]" />
+            <Chip
+              :label="detail.keyword"
+              :pt="{
+                root: { class: 'bg-[var(--p-primary-50)] py-1 px-3' },
+                label: { class: 'text-[var(--p-primary-color)] font-medium text-[13px]' },
+              }"
+            />
+          </div>
+          <span class="text-[12px] text-[var(--p-text-muted-color)] pl-6">{{ t('live_order.text.keyword_auto_order') }}</span>
+        </div>
+      </div>
+    </section>
 
     <template #footer>
       <div class="flex items-center justify-between w-full">
+        <!-- 左下角：解除訂單（destructive） -->
         <Button
           :label="t('live_order.button.remove_order')"
-          icon="pi pi-ban"
-          variant="text"
           severity="danger"
-          class="!px-0"
+          outlined
           @click="onRemove"
-        />
+        >
+          <template #icon>
+            <FontAwesomeIcon :icon="['far', 'ban']" class="mr-1" />
+          </template>
+        </Button>
+        <!-- 右下角：關閉 -->
         <Button
           :label="t('live_order.button.close')"
           severity="secondary"
@@ -127,7 +191,7 @@ interface LiveComment {
 }
 
 interface PlatformMeta {
-  platformIcon: string
+  platformIcon: [string, string]
   platformColor: string
 }
 
@@ -163,7 +227,6 @@ const emit = defineEmits<{
   remove: []
 }>()
 
-/** Forward Dialog visibility changes to the parent. */
 function onVisibleChange(v: boolean): void { emit('update:visible', v) }
 
 function onRemove(): void {
@@ -171,15 +234,25 @@ function onRemove(): void {
   onVisibleChange(false)
 }
 
-// 商品名稱 / 規格目前資料來源未提供，依留言 seed 取一組 mock 讓卡片呈現完整（與單價 mock 同做法）
-const MOCK_PRODUCTS = ['經典白色T恤（直播卡）', '日系棉麻襯衫', '機能防風外套', '韓版針織毛衣', '純棉圓領上衣']
-const MOCK_VARIANTS = ['白色T恤 · 白色 / S', '卡其 / M', '黑色 / L', '米白 / F', '深藍 / XL']
+// items 對應留言實際匹配到的商品；layout 支援多筆，目前一張留言匹配一筆商品 → 1 item，
+// 沒匹配時 fallback 一筆 mock 商品（避免畫面整片空白）。
+interface DetailItem {
+  id: number
+  name: string
+  spec: string
+  qty: number
+  unitPrice: number
+  subtotal: number
+}
 
-/**
- * 把留言整理成單筆訂單卡片要顯示的資料。
- * 商品名/規格/單價/數量為 mock（資料層尚未提供）；
- * 會員、關鍵字、建立時間取自留言。
- */
+const MOCK_PRODUCTS = [
+  { name: '經典白色T恤（直播卡）', spec: '白色T恤 · 白色 / S', unit: 1290 },
+  { name: '日系棉麻襯衫',           spec: '卡其 / M',            unit: 980 },
+  { name: '機能防風外套',           spec: '黑色 / L',            unit: 1480 },
+  { name: '韓版針織毛衣',           spec: '米白 / F',            unit: 880 },
+  { name: '純棉圓領上衣',           spec: '深藍 / XL',           unit: 690 },
+]
+
 const detail = computed(() => {
   const c = props.comment
   const p = props.product
@@ -187,24 +260,39 @@ const detail = computed(() => {
   const seedSource = `${c.id ?? ''}${c.text ?? ''}` || 'x'
   const seed = seedSource.split('').reduce((a, ch) => a + ch.charCodeAt(0), 0)
 
-  // 數量：優先用傳入值，其次解析留言「+N」，最後 fallback 1
+  // 數量：優先 props.quantity → 留言「+N」→ 1
   const parsedQty = Number((c.text ?? '').match(/\+(\d+)/)?.[1])
   const qty = props.quantity ?? (Number.isFinite(parsedQty) ? parsedQty : 1)
 
-  // 商品：優先用配對到的收單中商品卡，否則用 mock fallback
-  const unitPrice = p?.price ?? (200 + (seed % 12) * 100)
-  const productName = p?.name ?? MOCK_PRODUCTS[seed % MOCK_PRODUCTS.length]
-  const specVariant = (p?.specs ?? []).map(s => s?.name).filter(Boolean).join(' / ')
-  const variant = p ? specVariant : MOCK_VARIANTS[seed % MOCK_VARIANTS.length]
+  // 訂單商品：原則上 1 筆 = 1 個被匹配到的收單商品（與留言內容對應）；
+  // 找不到匹配時用 mock 補一筆避免空白
+  const fallback = MOCK_PRODUCTS[seed % MOCK_PRODUCTS.length]
+  const unitPrice = p?.price ?? fallback.unit
+  const name = p?.name ?? fallback.name
+  const spec = p
+    ? (p.specs ?? []).map((s) => s?.name).filter(Boolean).join(' / ')
+    : fallback.spec
+
+  const items: DetailItem[] = [
+    {
+      id: idNum || seed,
+      name,
+      spec,
+      qty,
+      unitPrice,
+      subtotal: unitPrice * qty,
+    },
+  ]
+
+  const totalCount = items.reduce((sum, it) => sum + it.qty, 0)
+  const totalAmount = items.reduce((sum, it) => sum + it.subtotal, 0)
   const user = c.user ?? ''
 
   return {
     orderNo: `A${String(idNum || (seed % 999) + 1).padStart(3, '0')}`,
-    productName,
-    variant,
-    unitPrice,
-    qty,
-    amount: unitPrice * qty,
+    items,
+    totalCount,
+    totalAmount,
     keyword: c.text ?? '',
     memberName: user,
     initial: user.trim().charAt(0).toUpperCase() || '?',
@@ -214,7 +302,6 @@ const detail = computed(() => {
   }
 })
 
-/** 由建立時間字串計算距今天數；無法解析時回傳 null。 */
 function daysAgoFrom(time?: string): number | null {
   if (!time) return null
   const then = new Date(time.replace(' ', 'T')).getTime()

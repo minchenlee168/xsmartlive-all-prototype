@@ -89,13 +89,14 @@
                 :comment="c"
                 :platform-meta="getPlatformMeta(c.platform)"
                 :live-products="liveProducts"
+                :session-products="props.products"
                 @blacklist="onBlacklist"
                 @unblacklist="onUnblacklist" />
             </template>
             <div v-else class="flex flex-col items-center gap-2 text-[var(--p-text-muted-color)] pt-8">
               <i class="pi pi-comments" style="font-size:32px"></i>
               <span class="text-[12.25px]">{{ t('live_order.empty.no_live_product_yet') }}</span>
-              <span class="text-[11px] text-[var(--p-content-border-color)]">{{ t('live_order.empty.comments_will_show') }}</span>
+              <span class="text-[13px] text-[var(--p-text-color)]">{{ t('live_order.empty.comments_will_show') }}</span>
             </div>
           </TabPanel>
 
@@ -120,8 +121,10 @@
                   sourceCardBorderClass(s.type)]">
                 <div :class="['w-[36px] h-[36px] rounded-[8px] flex items-center justify-center shrink-0',
                   sourceCardBgClass(s.type)]">
-                  <i :class="getPlatformMeta(s.type).platformIcon"
-                    :style="`font-size:16px; color:${getPlatformMeta(s.type).platformColor}`"></i>
+                  <FontAwesomeIcon
+                    :icon="getPlatformMeta(s.type).platformIcon"
+                    :style="{ fontSize: '16px', color: getPlatformMeta(s.type).platformColor }"
+                  />
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="font-bold text-[14px] text-[var(--p-text-color)] truncate">{{ s.label }}</div>
@@ -178,7 +181,8 @@ interface LiveComment {
 }
 
 interface PlatformMeta {
-  platformIcon: string
+  /** FontAwesomeIcon 接受的 [prefix, name] 陣列；renderer 直接綁到 :icon。 */
+  platformIcon: [string, string]
   platformColor: string
 }
 
@@ -276,32 +280,36 @@ watch(() => previewableSources.value.length, (n) => {
   if (previewIndex.value >= n) previewIndex.value = Math.max(0, n - 1)
 })
 
-// 多平台留言 mock：留言內容以「{關鍵字}+1」格式對應商品；綠勾條件 = text 含「+1」
-// 留言文字只依「收單中(status==='live')」商品卡的關鍵字循環產生（{kwN} 對應第 N 個收單中商品，越界則循環取用）
-const fallbackKeyword = 'A07'
-const currentKeywords = computed<string[]>(() => {
-  const list = liveProducts.value
-    .map(p => p?.keyword || p?.sku?.split('-')[0])
-    .filter((s): s is string => Boolean(s))
-  return list.length > 0 ? list : [fallbackKeyword]
+// 多平台留言 mock：留言文字直接用「{商品名稱}+數量」對應到商品卡，跟商品名稱一致。
+// 模板的 {nameN} 由「當前場次商品」的 name 循環填入，**非禮物商品優先**。
+// 真正的「已下單」判定（orderMatch）仍只看 status==='live' 的商品。
+const fallbackName = '直播商品'
+const currentNames = computed<string[]>(() => {
+  const all = props.products
+    .map(p => ({ name: (p?.name as string | undefined) ?? '', isGift: !!(p as { isGift?: boolean })?.isGift }))
+    .filter((x): x is { name: string; isGift: boolean } => Boolean(x.name))
+  const nonGift = all.filter(x => !x.isGift).map(x => x.name)
+  const gift = all.filter(x => x.isGift).map(x => x.name)
+  const list = [...nonGift, ...gift]
+  return list.length > 0 ? list : [fallbackName]
 })
 const commentTemplates: LiveComment[] = [
-  { id: 1, user: '粉絲團小編',       text: '最後1分鐘～',       platform: 'fb',    tagType: 'official', pinned: true,  time: '2025-12-17 20:48:07' },
-  { id: 2, user: 'Haji Abdul Mali…', text: '{kw0}+1',           platform: 'fb',    stars: 3,             time: '2025-12-17 20:48:07' },
-  { id: 3, user: '陳大悅',           text: '早安',              platform: 'ig',    stars: 3,             time: '2025-12-17 20:48:07' },
-  { id: 4, user: '王大天',           text: '{kw1}+1',           platform: 'live',  stars: 3,             time: '2025-12-17 20:48:07' },
-  { id: 5, user: 'Jade Liu',         text: '{kw2}+1',           platform: 'ig',    tagType: 'blacklist', time: '2025-12-17 20:48:07' },
-  { id: 6, user: '張曉明',           text: '{kw0}+1',           platform: 'group', tagType: 'vip',       time: '2025-12-17 20:48:07' },
-  { id: 7, user: '林小美',           text: '{kw1}+3',           platform: 'fb',    stars: 2,             time: '2025-12-17 20:49:12' },
-  { id: 8, user: '蔡先生',           text: '我要一件 {kw2}',    platform: 'live',  stars: 4,             time: '2025-12-17 20:49:30' },
+  { id: 1, user: '粉絲團小編',       text: '最後1分鐘～',         platform: 'fb',    tagType: 'official', pinned: true,  time: '2025-12-17 20:48:07' },
+  { id: 2, user: 'Haji Abdul Mali…', text: '{name0}+1',           platform: 'fb',    stars: 3,             time: '2025-12-17 20:48:07' },
+  { id: 3, user: '陳大悅',           text: '早安',                platform: 'ig',    stars: 3,             time: '2025-12-17 20:48:07' },
+  { id: 4, user: '王大天',           text: '{name1}+1',           platform: 'live',  stars: 3,             time: '2025-12-17 20:48:07' },
+  { id: 5, user: 'Jade Liu',         text: '{name2}+1',           platform: 'ig',    tagType: 'blacklist', time: '2025-12-17 20:48:07' },
+  { id: 6, user: '張曉明',           text: '{name0}+1',           platform: 'group', tagType: 'vip',       time: '2025-12-17 20:48:07' },
+  { id: 7, user: '林小美',           text: '{name1}+3',           platform: 'fb',    stars: 2,             time: '2025-12-17 20:49:12' },
+  { id: 8, user: '蔡先生',           text: '我要一件 {name2}+1',  platform: 'live',  stars: 4,             time: '2025-12-17 20:49:30' },
 ]
-/** Replace {kwN} placeholders in the template text with keywords (wraps around). */
-function applyKeywords(text: string, kws: string[]): string {
-  return text.replace(/\{kw(\d+)\}/g, (_, i) => kws[Number(i) % kws.length])
+/** 把模板裡的 {nameN} 換成第 N 個商品名稱（循環取用）。 */
+function applyNames(text: string, names: string[]): string {
+  return text.replace(/\{name(\d+)\}/g, (_, i) => names[Number(i) % names.length])
 }
 const comments = ref<LiveComment[]>(commentTemplates.map(c => ({ ...c })))
-watch(currentKeywords, kws => {
-  comments.value = commentTemplates.map(c => ({ ...c, text: applyKeywords(c.text, kws) }))
+watch(currentNames, names => {
+  comments.value = commentTemplates.map(c => ({ ...c, text: applyNames(c.text, names) }))
 }, { immediate: true, deep: true })
 
 // 留言只顯示來自當前場次已加入收單來源的平台
@@ -321,14 +329,14 @@ function onUnblacklist(id: number | string): void {
 }
 
 const platformsMap: Record<string, PlatformMeta> = {
-  fb:    { platformIcon: 'fa-brands fa-facebook',  platformColor: '#1877f2' },
-  ig:    { platformIcon: 'fa-brands fa-instagram', platformColor: '#db2777' },
-  group: { platformIcon: 'fa-brands fa-facebook',  platformColor: '#1877f2' },
-  live:  { platformIcon: 'pi pi-video',            platformColor: '#ef4444' },
+  fb:    { platformIcon: ['fab', 'facebook'],  platformColor: '#1877f2' },
+  ig:    { platformIcon: ['fab', 'instagram'], platformColor: '#db2777' },
+  group: { platformIcon: ['far', 'users'],     platformColor: '#16a34a' },
+  live:  { platformIcon: ['far', 'video'],     platformColor: '#ef4444' },
 }
 /** Look up icon / colour metadata for a platform key; falls back to a neutral set. */
 function getPlatformMeta(type: string): PlatformMeta {
-  return platformsMap[type] || { platformIcon: 'pi pi-question-circle', platformColor: 'var(--p-text-muted-color)' }
+  return platformsMap[type] || { platformIcon: ['far', 'circle-question'], platformColor: 'var(--p-text-muted-color)' }
 }
 
 function sourceCardBgClass(type: string): string {

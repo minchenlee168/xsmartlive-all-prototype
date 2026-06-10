@@ -157,10 +157,18 @@
                   <i class="pi pi-image text-[18px] text-[var(--p-text-muted-color)]"></i>
                 </div>
                 <div class="flex flex-col gap-[2px]">
-                  <span class="font-medium text-[15px] text-[var(--p-text-color)]">
+                  <span class="font-medium text-[15px]"
+                    :class="isProductExisting(p) ? 'text-[var(--p-text-muted-color)]' : 'text-[var(--p-text-color)]'"
+                  >
                     {{ p.name }}
                   </span>
-                  <span class="text-[12px] text-[var(--p-text-muted-color)]">{{ p.sku }}</span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[12px] text-[var(--p-text-muted-color)]">{{ p.sku }}</span>
+                    <span v-if="isProductExisting(p)"
+                      class="text-[11px] font-medium text-[var(--p-primary-color)] bg-[var(--p-primary-50)] px-1.5 py-0.5 rounded">
+                      {{ t('live_order.label.already_added') }}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div class="px-2 py-[6px] shrink-0" style="width: 120px">
@@ -185,6 +193,7 @@
                 <Checkbox
                   :model-value="isItemSelected('p-' + p.id)"
                   binary
+                  :disabled="isProductExisting(p)"
                   @change="toggleProduct(p)"
                 />
               </div>
@@ -237,6 +246,7 @@
                     <Checkbox
                       :model-value="isItemSelected('s-' + spec.id)"
                       binary
+                      :disabled="isProductExisting(p)"
                       @change="toggleSpec(p, spec)"
                     />
                   </div>
@@ -355,7 +365,15 @@ interface ProductFormApi {
 /** 步驟一勾選的商品 / 規格項目（攜帶基本資料供建立 session 商品）。 */
 interface SelectedItem {
   key: string
+  /** 規格項目的 parent 商品 id；商品本身被勾選時 productId === item 自身 id（自身為 parent）。 */
+  productId: number
+  /** 規格項目時為 spec id；商品本身被勾選時為 product id。 */
+  itemId: number
+  /** true = 規格項目；false = 商品本身（沒帶規格）。 */
+  isSpec: boolean
   name: string
+  /** 規格名稱（isSpec=true 時填）。 */
+  specName?: string
   sku: string
   cost: number
   price: number
@@ -364,10 +382,23 @@ interface SelectedItem {
 
 interface Props {
   visible?: boolean
+  /** 當前場次已加入的商品；用 name 判斷是否已加入，已加入的 picker row 整列 disabled。 */
+  existingProducts?: Array<{ name?: string;[key: string]: unknown }>
 }
 const props = withDefaults(defineProps<Props>(), {
   visible: false,
+  existingProducts: () => [],
 })
+
+/** 已加入的商品名稱 set（picker 用來決定 disabled）。 */
+const existingNames = computed(() => new Set(
+  props.existingProducts.map((p) => p?.name).filter((n): n is string => Boolean(n)),
+))
+
+/** 該 picker 商品是否已存在於場次（依名稱）。 */
+function isProductExisting(p: PickerProduct): boolean {
+  return existingNames.value.has(p.name)
+}
 const emit = defineEmits<{
   'update:visible': [value: boolean]
   'add-products': [products: Array<Record<string, unknown>>]
@@ -425,23 +456,62 @@ function toggleItem(item: SelectedItem): void {
   selectedItems.value = map
 }
 
-/** 勾選整個商品（不指定規格），帶整體 cost/price/stock。 */
+/**
+ * 勾選 / 取消整個商品。
+ *
+ * 行為：
+ * - 勾起 → 同步把該商品所有規格也勾起（UI 上每個 spec checkbox 都會打勾）
+ * - 取消 → 同步把該商品所有規格 checkbox 也取消
+ *
+ * 內部以 Map 一次性更新，避免每個 spec 各自觸發 reactive 多次重渲染。
+ */
 function toggleProduct(p: PickerProduct): void {
-  toggleItem({
-    key: `p-${p.id}`,
-    name: p.name,
-    sku: p.sku,
-    cost: p.cost,
-    price: p.price,
-    stock: p.stock,
-  })
+  const map = new Map(selectedItems.value)
+  const productKey = `p-${p.id}`
+  const isOn = !map.has(productKey)
+  if (isOn) {
+    map.set(productKey, {
+      key: productKey,
+      productId: p.id,
+      itemId: p.id,
+      isSpec: false,
+      name: p.name,
+      sku: p.sku,
+      cost: p.cost,
+      price: p.price,
+      stock: p.stock,
+    })
+    p.specs.forEach((spec) => {
+      const k = `s-${spec.id}`
+      map.set(k, {
+        key: k,
+        productId: p.id,
+        itemId: spec.id,
+        isSpec: true,
+        name: `${p.name} - ${spec.name}`,
+        specName: spec.name,
+        sku: spec.sku,
+        cost: spec.cost,
+        price: spec.price,
+        stock: spec.stock,
+      })
+    })
+  } else {
+    map.delete(productKey)
+    p.specs.forEach((spec) => map.delete(`s-${spec.id}`))
+  }
+  selectedItems.value = map
 }
 
 /** 勾選單一規格，name 帶「商品 - 規格」格式、用 spec 的 cost/price/stock。 */
 function toggleSpec(p: PickerProduct, spec: PickerSpec): void {
   toggleItem({
     key: `s-${spec.id}`,
+    productId: p.id,
+    itemId: spec.id,
+    isSpec: true,
     name: `${p.name} - ${spec.name}`,
+    specName: spec.name,
     sku: spec.sku,
     cost: spec.cost,
     price: spec.price,
@@ -459,22 +529,97 @@ function onBackToPick(): void {
   step.value = 'pick'
 }
 
-/** 儲存：把共同下標設定套用到每個勾選的商品，emit add-products 後關 dialog。 */
+/**
+ * 儲存：依「所屬商品」群組勾選項目，再依共同下標設定產生 session 商品卡：
+ * - 勾主商品 + 該商品本身有規格 → 1 張主商品卡，selectedSpecs 自動帶入「全部規格」
+ * - 只勾部分規格（沒勾主商品）→ 1 張主商品卡，selectedSpecs 帶被勾選的那幾個規格
+ * - 勾主商品 + 商品沒規格 → 1 張單純商品卡（無 selectedSpecs）
+ *
+ * 主商品 price 取規格的最小價、stock 加總、cost 取平均，作為預設與摺疊狀態的顯示值。
+ */
 function onSaveForm(): void {
   if (!formRef.value?.validate()) return
   const settings = formRef.value.getSettings()
   const base = Date.now()
-  const products = Array.from(selectedItems.value.values()).map((it, i) => ({
-    ...settings,
-    // 每個商品各自一份數量優惠，避免共用同一陣列參考
-    quantityDiscounts: settings.quantityDiscounts.map(t => ({ ...t })),
-    id: base + i,
-    name: it.name,
-    cost: it.cost,
-    price: it.price,
-    stock: it.stock,
-    sku: it.sku,
-  }))
+
+  // 依 productId 群組
+  const groups = new Map<number, SelectedItem[]>()
+  Array.from(selectedItems.value.values()).forEach((it) => {
+    const arr = groups.get(it.productId) ?? []
+    arr.push(it)
+    groups.set(it.productId, arr)
+  })
+
+  let offset = 0
+  const products: Array<Record<string, unknown>> = []
+  groups.forEach((items, productId) => {
+    const parent = allPickerProducts.find((p) => p.id === productId)
+    const productItem = items.find((it) => !it.isSpec)
+    const checkedSpecItems = items.filter((it) => it.isSpec)
+    const parentSpecs = parent?.specs ?? []
+
+    // 若勾選主商品 → selectedSpecs 用該商品「全部規格」；
+    // 否則用使用者勾的那幾個規格。
+    const effectiveSpecs = (productItem && parentSpecs.length > 0)
+      ? parentSpecs.map((s) => ({
+          itemId: s.id,
+          specName: s.name,
+          sku: s.sku,
+          cost: s.cost,
+          price: s.price,
+          stock: s.stock,
+        }))
+      : checkedSpecItems.map((s) => ({
+          itemId: s.itemId,
+          specName: s.specName,
+          sku: s.sku,
+          cost: s.cost,
+          price: s.price,
+          stock: s.stock,
+        }))
+
+    // 共用欄位
+    const baseFields: Record<string, unknown> = {
+      ...settings,
+      quantityDiscounts: settings.quantityDiscounts.map((t) => ({ ...t })),
+      id: base + offset,
+    }
+    offset += 1
+
+    if (effectiveSpecs.length > 0) {
+      // 主商品 + selectedSpecs：商品卡會顯示價格區間
+      const prices = effectiveSpecs.map((s) => s.price)
+      const stocks = effectiveSpecs.map((s) => s.stock)
+      products.push({
+        ...baseFields,
+        name: parent?.name ?? productItem?.name ?? '',
+        sku: parent?.sku ?? productItem?.sku ?? '',
+        cost: Math.round(effectiveSpecs.reduce((sum, s) => sum + s.cost, 0) / effectiveSpecs.length),
+        price: Math.min(...prices),
+        stock: stocks.reduce((sum, s) => sum + s, 0),
+        selectedSpecs: effectiveSpecs.map((s) => ({
+          id: s.itemId,
+          name: s.specName,
+          sku: s.sku,
+          cost: s.cost,
+          price: s.price,
+          stock: s.stock,
+          sold: 0,
+        })),
+      })
+    } else if (productItem) {
+      // 主商品本體被勾、且商品沒規格 → 單張單純商品卡
+      products.push({
+        ...baseFields,
+        name: productItem.name,
+        sku: productItem.sku,
+        cost: productItem.cost,
+        price: productItem.price,
+        stock: productItem.stock,
+      })
+    }
+  })
+
   emit('add-products', products)
   close()
 }
@@ -486,23 +631,24 @@ const productCategories = computed(() => [
   { label: t('live_order.category.accessory'),   value: '配件' },
   { label: t('live_order.category.headphone'),   value: '耳機' },
 ])
+// 規格價格刻意拉開（模擬同商品不同規格各自不同售價）：商品卡可顯示價格區間。
 const pickerSpecsMap: Record<number, PickerSpec[]> = {
   1: [
     { id: 101, name: '透明', sku: 'ACC-IP15P-001-CL', cost: 295, originalPrice: 588, price: 490, stock: 40 },
-    { id: 102, name: '黑色', sku: 'ACC-IP15P-001-BK', cost: 295, originalPrice: 588, price: 490, stock: 30 },
-    { id: 103, name: '深藍', sku: 'ACC-IP15P-001-NV', cost: 295, originalPrice: 588, price: 490, stock: 15 },
+    { id: 102, name: '黑色', sku: 'ACC-IP15P-001-BK', cost: 320, originalPrice: 620, price: 520, stock: 30 },
+    { id: 103, name: '深藍', sku: 'ACC-IP15P-001-NV', cost: 340, originalPrice: 660, price: 550, stock: 15 },
   ],
   3: [
     { id: 301, name: '灰色 / 普通版', sku: 'GAM-NSW-001-GR', cost: 5880, originalPrice: 11760, price: 9800, stock: 3 },
-    { id: 302, name: '紅色 / 特別版', sku: 'GAM-NSW-001-RD', cost: 5880, originalPrice: 11760, price: 9800, stock: 3 },
+    { id: 302, name: '紅色 / 特別版', sku: 'GAM-NSW-001-RD', cost: 6480, originalPrice: 12960, price: 10800, stock: 3 },
   ],
   5: [
     { id: 501, name: '55 吋', sku: '3C-SAM-TV55', cost: 20000, originalPrice: 51480, price: 42900, stock: 2 },
-    { id: 502, name: '65 吋', sku: '3C-SAM-TV65', cost: 25740, originalPrice: 51480, price: 42900, stock: 3 },
+    { id: 502, name: '65 吋', sku: '3C-SAM-TV65', cost: 25740, originalPrice: 61500, price: 51900, stock: 3 },
   ],
   7: [
     { id: 701, name: '黑色 / 青軸', sku: 'GAM-RZR-010-BK-CY', cost: 2100, originalPrice: 4200, price: 3500, stock: 5 },
-    { id: 702, name: '白色 / 紅軸', sku: 'GAM-RZR-010-WH-RD', cost: 2100, originalPrice: 4200, price: 3500, stock: 3 },
+    { id: 702, name: '白色 / 紅軸', sku: 'GAM-RZR-010-WH-RD', cost: 2400, originalPrice: 4800, price: 3980, stock: 3 },
   ],
 }
 const pickerProductsRaw: PickerProductRaw[] = productCatalog

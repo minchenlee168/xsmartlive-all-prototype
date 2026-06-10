@@ -96,8 +96,10 @@
               </template>
               <template v-else>
                 <span class="font-bold text-[16px] text-[var(--p-primary-color)]">{{ priceDisplay }}</span>
-                <button v-if="!isGift" @click="isEditingPrice = true" class="text-[var(--p-text-muted-color)] hover:text-[var(--p-text-color)]">
-                  <i class="pi pi-pencil" style="font-size:12px"></i>
+                <button v-if="!isGift" @click="onPriceEditClick"
+                  v-tooltip.top="hasMultiSpec ? t('live_order.tooltip.edit_spec_prices') : ''"
+                  class="text-[var(--p-text-muted-color)] hover:text-[var(--p-text-color)]">
+                  <FontAwesomeIcon :icon="['far', 'pen']" class="text-[12px]" />
                 </button>
               </template>
             </div>
@@ -196,8 +198,9 @@
         <!-- 右側動作 -->
         <template v-if="status === 'live'">
           <!-- 紅色喇叭（推播，outlined） -->
-          <button class="w-[35px] h-[35px] rounded-full bg-[var(--p-content-background)] border-2 border-[#ef4444] hover:bg-[#fee2e2] flex items-center justify-center" v-tooltip.top="t('live_order.tooltip.push')">
-            <i class="fa-solid fa-bullhorn text-[#ef4444]" style="font-size:13px"></i>
+          <button @click="onPushClick"
+            class="w-[35px] h-[35px] rounded-full bg-[var(--p-content-background)] border-2 border-[#ef4444] hover:bg-[#fee2e2] flex items-center justify-center" v-tooltip.top="t('live_order.tooltip.push')">
+            <FontAwesomeIcon :icon="['far', 'bullhorn']" class="text-[#ef4444] text-[13px]" />
           </button>
           <!-- 紅色勾（結束收單／禮物為結束發送，filled） -->
           <button @click="status = 'done'"
@@ -228,6 +231,13 @@
     <EditProductDialog v-model:visible="settingDialogVisible" :product="product" @save="onSettingSave" />
     <!-- 禮物編輯 Dialog：與「新增禮物」同一彈窗，帶入現有禮物資料 -->
     <GiftFormDialog v-model:visible="giftFormVisible" :product="product" @submit="onGiftEdit" />
+    <!-- 規格價格編輯 Dialog（僅多規格商品開啟） -->
+    <SpecPriceEditDialog
+      v-model:visible="specPriceDialogVisible"
+      :product-name="product.name"
+      :specs="priceEditableSpecs"
+      @apply="onSpecPriceApply"
+    />
   </div>
 </template>
 
@@ -235,9 +245,11 @@
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useConfirm } from 'primevue/useconfirm'
+import { useToast } from 'primevue/usetoast'
 import WinnerListDialog from './WinnerListDialog.vue'
 import EditProductDialog from './EditProductDialog.vue'
 import GiftFormDialog, { type GiftSubmitPayload } from './GiftFormDialog.vue'
+import SpecPriceEditDialog from './SpecPriceEditDialog.vue'
 
 interface ProductSpec {
   id?: number
@@ -291,10 +303,53 @@ const emit = defineEmits<{
 }>()
 const { t } = useI18n()
 const confirm = useConfirm()
+const toast = useToast()
+
+/** 推播：原型階段直接彈成功 toast，不接後端。 */
+function onPushClick(): void {
+  toast.removeAllGroups()
+  toast.add({
+    severity: 'success',
+    summary: t('live_order.toast.push_sent'),
+    life: 2000,
+  })
+}
 
 const winnerDialogVisible = ref(false)
 const settingDialogVisible = ref(false)
 const giftFormVisible = ref(false)
+const specPriceDialogVisible = ref(false)
+
+/**
+ * 規格價編輯能讀寫的資料來源：優先 selectedSpecs（從 AddProductDialog 帶入），
+ * 否則 specs（從 EditProductDialog 補的）。商品卡價格區間/編輯彈窗都統一走這個。
+ */
+const priceEditableSpecs = computed<ProductSpec[]>(() =>
+  props.product.selectedSpecs?.length
+    ? props.product.selectedSpecs
+    : (props.product.specs ?? []),
+)
+
+const hasMultiSpec = computed(() => priceEditableSpecs.value.length > 0)
+
+/** 點價格 pencil：多規格走 dialog；單品 / 無規格維持原本 inline 編輯。 */
+function onPriceEditClick(): void {
+  if (hasMultiSpec.value) specPriceDialogVisible.value = true
+  else isEditingPrice.value = true
+}
+
+/** 套用規格價：依 spec id 對應更新規格的 price；同步把 product.price 設為最低價。 */
+function onSpecPriceApply(priceMap: Record<number, number>): void {
+  const specs = priceEditableSpecs.value
+  if (!specs.length) return
+  specs.forEach((s) => {
+    if (typeof s.id === 'number' && priceMap[s.id] !== undefined) {
+      s.price = priceMap[s.id]
+    }
+  })
+  const prices = specs.map((s) => s.price ?? 0).filter((n) => n > 0)
+  if (prices.length > 0) props.product.price = Math.min(...prices)
+}
 
 /** 編輯入口：禮物商品開「新增禮物」彈窗，一般商品開商品設定彈窗。 */
 function openEditor(): void {
@@ -352,7 +407,7 @@ const shortCode = computed(() => keyword.value)
 const isBidding = computed(() => !!props.product.bidding)
 
 const priceDisplay = computed(() => {
-  const specs = props.product.selectedSpecs || []
+  const specs = priceEditableSpecs.value
   if (specs.length > 1) {
     const prices = specs.map(s => s.price ?? props.product.price ?? 0)
     const min = Math.min(...prices)

@@ -65,8 +65,14 @@ function resolveChildKey(child: MenuItem, index: number): string {
       @click="handleToggleExpandMenu"
     >
       <div class="flex items-center justify-center gap-2">
+        <img
+          v-if="item.imgSrc"
+          :src="item.imgSrc"
+          class="w-5 h-5 shrink-0"
+          alt=""
+        >
         <FontAwesomeIcon
-          v-if="item.icon"
+          v-else-if="item.icon"
           :icon="item.icon"
         />
         <Transition name="menu-label">
@@ -95,8 +101,14 @@ function resolveChildKey(child: MenuItem, index: number): string {
       rel="noopener noreferrer"
       class="flex items-center h-14 p-4 gap-2 cursor-pointer hover:text-primary"
     >
+      <img
+        v-if="item.imgSrc"
+        :src="item.imgSrc"
+        class="w-5 h-5 shrink-0"
+        alt=""
+      >
       <FontAwesomeIcon
-        v-if="item.icon"
+        v-else-if="item.icon"
         :icon="item.icon"
       />
       <Transition name="menu-label">
@@ -117,8 +129,14 @@ function resolveChildKey(child: MenuItem, index: number): string {
         'border-r-4 border-primary': props.isExpanded && isActiveMenuItem
       }"
     >
+      <img
+        v-if="item.imgSrc"
+        :src="item.imgSrc"
+        class="w-5 h-5 shrink-0"
+        alt=""
+      >
       <FontAwesomeIcon
-        v-if="item.icon"
+        v-else-if="item.icon"
         :icon="item.icon"
       />
       <Transition name="menu-label">

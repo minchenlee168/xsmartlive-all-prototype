@@ -91,8 +91,11 @@ const orderSettingRef = useTemplateRef<InstanceType<typeof OrderSettingForm>>('o
  */
 const initialData = computed(() => {
   const p = props.product ?? {}
-  const specs = mapSpecsToPortal(p.specs ?? [])
-  const variants = mapVariantsFromSpecs(p.specs ?? [], p)
+  // 規格來源：優先 selectedSpecs（從 AddProductDialog picker 帶進來），
+  // 否則 specs（EditProductDialog 之前儲存的）；兩者擇一非空即視為有規格。
+  const rawSpecs = (p.selectedSpecs?.length ? p.selectedSpecs : p.specs) ?? []
+  const specs = mapSpecsToPortal(rawSpecs)
+  const variants = mapVariantsFromSpecs(rawSpecs, p)
 
   const data: Partial<PortalProduct> = {
     id: p.id,
@@ -103,7 +106,7 @@ const initialData = computed(() => {
     weight: p.weight ?? 0,
     tags: Array.isArray(p.tags) ? [...p.tags] : [],
     categoryIds: Array.isArray(p.categoryIds) ? [...p.categoryIds] : [],
-    hasSpec: (p.specs?.length ?? 0) > 0,
+    hasSpec: rawSpecs.length > 0,
     allowOversell: false,
     isCouponEnabled: true,
   }

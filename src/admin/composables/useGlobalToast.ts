@@ -15,6 +15,7 @@ export function useGlobalToast() {
   const toast = useToast()
 
   function showSuccess(options: ToastOptions): void {
+    toast.removeAllGroups()
     toast.add({
       severity: 'success',
       summary: options.summary ?? 'Success',
@@ -24,6 +25,7 @@ export function useGlobalToast() {
   }
 
   function showError(options: ToastOptions): void {
+    toast.removeAllGroups()
     toast.add({
       severity: 'error',
       summary: options.summary ?? 'Error',
@@ -33,6 +35,7 @@ export function useGlobalToast() {
   }
 
   function showWarn(options: ToastOptions): void {
+    toast.removeAllGroups()
     toast.add({
       severity: 'warn',
       summary: options.summary ?? 'Warning',
@@ -42,6 +45,7 @@ export function useGlobalToast() {
   }
 
   function showInfo(options: ToastOptions): void {
+    toast.removeAllGroups()
     toast.add({
       severity: 'info',
       summary: options.summary ?? 'Info',

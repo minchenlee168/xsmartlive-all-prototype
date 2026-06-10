@@ -5,6 +5,11 @@
       "group_source": "Group ordering",
       "post_source": "Post ordering"
     },
+    "status": {
+      "live": "Live",
+      "ready": "Ready",
+      "done": "Ended"
+    },
     "label": {
       "discount_amount": "Amount",
       "discount_percent": "Percent",
@@ -34,9 +39,16 @@
       "vip_member": "VIP member",
       "regular_member": "Member",
       "unit_price": "Unit price",
+      "product_detail": "Items",
+      "total_items": "{count} items",
+      "order_amount": "Order amount",
+      "order_info": "Order info",
+      "checkout_status": "Checkout status",
+      "member_and_source": "Member & source",
       "currency_ntd": "NT$",
       "official_editor": "Official",
       "used": "Used",
+      "already_added": "Added",
       "or": "OR",
       "paste_link": "Paste link",
       "live_streaming": "Live stream",
@@ -75,6 +87,7 @@
       "pick_source": "Pick order source",
       "save": "Save",
       "cancel": "Cancel",
+      "bulk_delete": "Bulk delete",
       "remove": "Remove",
       "back": "Back",
       "confirm": "Confirm",
@@ -221,7 +234,9 @@
         "product_spec": "Product / Spec",
         "checkout_status": "Checkout status",
         "created_at": "Created at",
-        "actions": "Actions"
+        "actions": "Actions",
+        "spec": "Spec",
+        "price": "Price"
       },
       "value": {
         "unnamed_product": "Untitled product",
@@ -233,6 +248,7 @@
     },
     "dialog": {
       "product_setting_header": "Product settings",
+      "spec_price_edit_header": "Edit spec prices",
       "batch_edit_header": "Batch settings",
       "create_session_header": "Create session",
       "order_detail_header": "Order detail",
@@ -280,6 +296,7 @@
     "toast": {
       "session_created": "Session created",
       "products_added": "Products added",
+      "push_sent": "Push notification sent",
       "products_not_added": "No products added",
       "products_added_detail": "Added {added}",
       "products_added_with_skipped": "Added {added}, skipped {skipped} duplicates",
@@ -289,9 +306,13 @@
       "ordering_ended_detail": "{count} products ended",
       "batch_edit_done": "Batch settings done",
       "batch_edit_detail": "Updated {count} products across {fields} fields",
+      "bulk_delete_done": "Bulk delete done",
+      "bulk_delete_detail": "Deleted {count} products",
       "gift_sent": "Gift sent — pinned in the chat",
       "order_added": "Order added",
-      "order_added_detail": "Added {count} item(s) for {user}"
+      "order_added_detail": "Added {count} item(s) for {user}",
+      "order_removed": "Order removed",
+      "order_removed_detail": "Removed {user}'s order"
     },
     "tooltip": {
       "pick_source_first": "Please pick or create a session first",
@@ -315,7 +336,8 @@
       "remove_from_blacklist": "Unblacklist",
       "order_detail": "Order detail",
       "add_order": "Add order",
-      "winner_list": "Winner list"
+      "winner_list": "Winner list",
+      "edit_spec_prices": "Edit spec prices"
     },
     "empty": {
       "no_product_content": "No products yet",
@@ -328,10 +350,11 @@
       "no_matching_product": "No matching products",
       "no_product_added_hint": "No products added — click \"Add product\" above",
       "no_live_product_yet": "No products are live yet",
-      "comments_will_show": "Comments will appear once a product is live",
+      "comments_will_show": "Comments will load once a product is live",
       "no_source_added": "No order sources added",
       "no_order": "No orders yet",
-      "no_live_product": "No products are live yet"
+      "no_live_product": "No products are live yet",
+      "no_spec": "No specs yet"
     },
     "text": {
       "required": "*",

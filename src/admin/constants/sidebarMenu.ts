@@ -1,9 +1,13 @@
 import type { PermissionKey } from '@/admin/constants/permissions'
 import { RouteName } from '@/admin/router'
+import liveLogoUrl from '@/admin/assets/live-logo.svg'
 
 export interface MenuItem {
   labelKey: string
+  /** FontAwesome icon（prefix + name）。 */
   icon?: string | string[]
+  /** 以 SVG 圖片取代 FA icon（直播收單區用 live-logo.svg）。優先於 `icon`。 */
+  imgSrc?: string
   to?: string
   url?: string
   target?: string
@@ -22,7 +26,7 @@ export interface MenuItem {
 export const sidebarMenu: MenuItem[] = [
   {
     labelKey: 'nav.live',
-    icon: ['far', 'tower-broadcast'],
+    imgSrc: liveLogoUrl,
     items: [
       {
         labelKey: 'nav.live_order',
@@ -38,7 +42,7 @@ export const sidebarMenu: MenuItem[] = [
   },
   {
     labelKey: 'nav.marketing',
-    icon: ['far', 'bullhorn'],
+    icon: ['far', 'chart-mixed'],
     items: [
       {
         labelKey: 'nav.bid_gift_lottery',

@@ -163,20 +163,33 @@
     </div>
 
     <template #footer>
-      <div class="flex justify-end gap-2">
-        <!-- 步驟 1 -->
+      <div class="flex justify-between items-center gap-2 w-full">
+        <!-- 步驟 1：左側放刪除（destructive），右側放取消 / 下一步 -->
         <template v-if="currentStep === 1">
-          <Button :label="t('live_order.button.cancel')" severity="secondary" outlined @click="emit('update:visible', false)" />
-          <Button :label="t('live_order.button.next_step')" icon="pi pi-arrow-right" icon-pos="right"
+          <Button :label="t('live_order.button.bulk_delete')" severity="danger" outlined
             :disabled="selectedRows.length === 0"
             v-tooltip.top="selectedRows.length === 0 ? t('live_order.tooltip.no_row_selected') : ''"
-            @click="currentStep = 2" />
+            @click="onBulkDelete">
+            <template #icon>
+              <FontAwesomeIcon :icon="['far', 'trash']" />
+            </template>
+          </Button>
+          <div class="flex gap-2">
+            <Button :label="t('live_order.button.cancel')" severity="secondary" outlined @click="emit('update:visible', false)" />
+            <Button :label="t('live_order.button.next_step')" icon="pi pi-arrow-right" icon-pos="right"
+              :disabled="selectedRows.length === 0"
+              v-tooltip.top="selectedRows.length === 0 ? t('live_order.tooltip.no_row_selected') : ''"
+              @click="currentStep = 2" />
+          </div>
         </template>
         <!-- 步驟 2 -->
         <template v-else>
-          <Button :label="t('live_order.button.prev_step')" icon="pi pi-arrow-left" severity="secondary" outlined @click="currentStep = 1" />
-          <Button :label="t('live_order.button.save')" icon="pi pi-save" :disabled="!canSave"
-            v-tooltip.top="saveTooltip" @click="onSave" />
+          <span></span>
+          <div class="flex gap-2">
+            <Button :label="t('live_order.button.prev_step')" icon="pi pi-arrow-left" severity="secondary" outlined @click="currentStep = 1" />
+            <Button :label="t('live_order.button.save')" icon="pi pi-save" :disabled="!canSave"
+              v-tooltip.top="saveTooltip" @click="onSave" />
+          </div>
         </template>
       </div>
     </template>
@@ -224,6 +237,8 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'update:visible': [value: boolean]
   apply: [payload: BatchApplyPayload]
+  /** 批次刪除已勾選商品；payload 為被刪除商品的 id 清單。 */
+  delete: [productIds: number[]]
 }>()
 
 const { t } = useI18n()
@@ -330,6 +345,13 @@ function onSave(): void {
     productIds: selectedRows.value.map(r => r.id),
     patch,
   })
+  emit('update:visible', false)
+}
+
+/** 批次刪除已勾選商品；emit ids 給父層，由父層真正從 session 移除，並關閉 dialog。 */
+function onBulkDelete(): void {
+  if (selectedRows.value.length === 0) return
+  emit('delete', selectedRows.value.map(r => r.id))
   emit('update:visible', false)
 }
 </script>

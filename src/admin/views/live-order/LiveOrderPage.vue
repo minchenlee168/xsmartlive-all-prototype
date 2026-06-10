@@ -47,9 +47,39 @@
             currentSession
               ? 'bg-[var(--p-content-background)] border-[var(--p-primary-color)] text-[var(--p-primary-color)] hover:bg-[var(--p-primary-50)]'
               : 'bg-[var(--p-content-hover-background)] border-[var(--p-content-border-color)] text-[var(--p-text-muted-color)] cursor-not-allowed']">
-          <i class="pi pi-pencil" style="font-size:14px"></i>{{ t('live_order.button.batch_edit') }}
+          <FontAwesomeIcon :icon="['far', 'gear']" class="text-[14px]" />{{ t('live_order.button.batch_edit') }}
         </button>
       </span>
+
+      <!-- 商品狀態統計：跟功能鈕同列，緊跟 BatchEdit -->
+      <div
+        v-if="hasAnySource"
+        class="flex items-center gap-3 px-3 py-1.5 rounded-[6px] border border-[var(--p-content-border-color)] bg-[var(--p-content-background)]"
+      >
+        <span
+          v-tooltip.bottom="t('live_order.status.live')"
+          class="inline-flex items-center gap-1.5 text-[14px] font-medium text-[var(--p-primary-color)]"
+        >
+          <FontAwesomeIcon :icon="['far', 'circle-play']" class="text-[16px]" />
+          {{ statusCounts.live }}
+        </span>
+        <span class="w-px h-3 bg-[var(--p-content-border-color)]" />
+        <span
+          v-tooltip.bottom="t('live_order.status.ready')"
+          class="inline-flex items-center gap-1.5 text-[14px] font-medium text-[var(--p-text-muted-color)]"
+        >
+          <FontAwesomeIcon :icon="['far', 'circle-pause']" class="text-[16px]" />
+          {{ statusCounts.ready }}
+        </span>
+        <span class="w-px h-3 bg-[var(--p-content-border-color)]" />
+        <span
+          v-tooltip.bottom="t('live_order.status.done')"
+          class="inline-flex items-center gap-1.5 text-[14px] font-medium text-[var(--p-text-muted-color)]"
+        >
+          <FontAwesomeIcon :icon="['far', 'circle-check']" class="text-[16px]" />
+          {{ statusCounts.done }}
+        </span>
+      </div>
 
       <!-- 右側群組：顯示留言 switch + 結束收單（只在 hasAnySource 時顯示） -->
       <div v-if="hasAnySource" class="ml-auto flex items-center gap-3">
@@ -132,13 +162,12 @@
       :used-post-ids="usedPostIds" :used-group-ids="usedGroupIds"
       @confirm="onSourceConfirmed" />
     <CreateSessionDialog v-model:visible="createDialogVisible" @create="onSessionCreate" />
-    <AddProductDialog v-model:visible="addProductDialogVisible" @add-products="onAddProducts" />
+    <AddProductDialog v-model:visible="addProductDialogVisible"
+      :existing-products="selectedProducts" @add-products="onAddProducts" />
     <BatchEditDialog v-model:visible="batchEditDialogVisible"
-      :products="selectedProducts" @apply="onBatchApply" />
+      :products="selectedProducts" @apply="onBatchApply" @delete="onBatchDelete" />
     <GiftFormDialog v-model:visible="giftDialogVisible" @submit="onGiftSubmit" />
     <DuplicateProductDialog v-model:visible="duplicateDialogVisible" :names="duplicateNames" />
-
-    <Toast position="bottom-right" />
 
   </div>
 </template>
@@ -264,7 +293,7 @@ function onGiftSubmit(payload: GiftSubmitPayload): void {
     note: payload.message,
     imageUrl: payload.imageUrl,
   })
-  toast.add({
+  toast.removeAllGroups();   toast.add({
     severity: 'success',
     summary: t('live_order.toast.gift_sent'),
     detail: payload.name,
@@ -284,12 +313,30 @@ function onBatchApply({ productIds, patch }: BatchApplyPayload): void {
     Object.entries(patch).forEach(([key, value]) => { (p as Record<string, unknown>)[key] = value })
     updated++
   })
-  toast.add({
+  toast.removeAllGroups();   toast.add({
     severity: 'success',
     summary: t('live_order.toast.batch_edit_done'),
     detail: t('live_order.toast.batch_edit_detail', { count: updated, fields: Object.keys(patch).length }),
     life: 2500,
   })
+}
+
+/** 批次刪除：依勾選 id 從當前場次的 products 移除，並 toast 提示。 */
+function onBatchDelete(productIds: number[]): void {
+  if (!currentSession.value || productIds.length === 0) return
+  const idSet = new Set(productIds)
+  const list = currentSession.value.products
+  const before = list.length
+  currentSession.value.products = list.filter(p => !idSet.has(p.id))
+  const removed = before - currentSession.value.products.length
+  if (removed > 0) {
+    toast.removeAllGroups();     toast.add({
+      severity: 'success',
+      summary: t('live_order.toast.bulk_delete_done'),
+      detail: t('live_order.toast.bulk_delete_detail', { count: removed }),
+      life: 2500,
+    })
+  }
 }
 
 // ── 場次 ─────────────────────────────────────────
@@ -314,7 +361,7 @@ function onSessionCreate(payload: SessionCreatePayload): void {
   const newSession: LiveSession = { id: Date.now(), ...payload, products: [], sources: [] }
   sessions.value.unshift(newSession)
   currentSession.value = newSession
-  toast.add({ severity: 'success', summary: t('live_order.toast.session_created'), detail: newSession.name, life: 2500 })
+  toast.removeAllGroups();   toast.add({ severity: 'success', summary: t('live_order.toast.session_created'), detail: newSession.name, life: 2500 })
 }
 
 // ── 商品（綁定到當前場次）─────────────────────────
@@ -334,18 +381,12 @@ const duplicateDialogVisible = ref(false)
 const duplicateNames = ref<string[]>([])
 
 /**
- * Batch-add single-spec product cards from the quick-add form.
- *
- * 與「選擇商品」目錄內既有商品同名者視為重複，不新增並彈窗說明原因；
- * 其餘正常新增。
+ * 快速新增商品：把每筆都加入當前場次的 products 清單；
+ * 原型階段不做重複名稱檢查、不彈重複 dialog，只顯示一個成功 toast。
  */
 function onQuickAddProducts(payloads: QuickAddProductPayload[]): void {
   if (!currentSession.value || payloads.length === 0) return
-
-  const duplicates = payloads.filter((p) => isCatalogDuplicate(p.name))
-  const addable = payloads.filter((p) => !isCatalogDuplicate(p.name))
-
-  addable.forEach((p) => {
+  payloads.forEach((p) => {
     currentSession.value!.products.push({
       id: p.id,
       name: p.name,
@@ -356,20 +397,13 @@ function onQuickAddProducts(payloads: QuickAddProductPayload[]): void {
       specs: [],
     })
   })
-
-  if (addable.length > 0) {
-    toast.add({
-      severity: 'success',
-      summary: t('live_order.toast.products_added'),
-      detail: t('live_order.toast.products_added_detail', { added: addable.length }),
-      life: 2000,
-    })
-  }
-
-  if (duplicates.length > 0) {
-    duplicateNames.value = duplicates.map((p) => p.name)
-    duplicateDialogVisible.value = true
-  }
+  toast.removeAllGroups()
+  toast.add({
+    severity: 'success',
+    summary: t('live_order.toast.products_added'),
+    detail: t('live_order.toast.products_added_detail', { added: payloads.length }),
+    life: 2000,
+  })
 }
 
 /** Remove a product card from the current session. */
@@ -394,7 +428,7 @@ function onAddProducts(products: LiveProduct[]): void {
     }
   })
   const skipped = products.length - added
-  toast.add({
+  toast.removeAllGroups();   toast.add({
     severity: added > 0 ? 'success' : 'warn',
     summary: added > 0 ? t('live_order.toast.products_added') : t('live_order.toast.products_not_added'),
     detail: skipped > 0
@@ -411,6 +445,13 @@ const sources = computed<LiveSource[]>(() => currentSession.value?.sources ?? []
 const hasAnySource = computed(() => sources.value.length > 0)
 
 const hasLiveProduct = computed(() => selectedProducts.value.some(p => p.status === 'live'))
+
+// 各狀態的商品數，給工具列上的小型統計顯示用
+const statusCounts = computed(() => ({
+  live: selectedProducts.value.filter(p => p.status === 'live').length,
+  ready: selectedProducts.value.filter(p => p.status === 'ready' || !p.status).length,
+  done: selectedProducts.value.filter(p => p.status === 'done').length,
+}))
 
 const canPickSource = computed(() =>
   Boolean(currentSession.value) && selectedProducts.value.length > 0)
@@ -452,7 +493,7 @@ function onSourceConfirmed(type: string, extras: SourceConfirmExtras = {}): void
     postId:  extras.postId  ?? null,
     groupId: extras.groupId ?? null,
   })
-  toast.add({
+  toast.removeAllGroups();   toast.add({
     severity: 'success',
     summary: t('live_order.toast.source_added'),
     detail: label,
@@ -486,7 +527,7 @@ function onRemoveSource(id: number | string): void {
       const arr = currentSession.value.sources
       const idx = arr.findIndex(s => s.id === id)
       if (idx !== -1) arr.splice(idx, 1)
-      toast.add({ severity: 'info', summary: t('live_order.toast.source_removed'), detail: target.label, life: 2000 })
+      toast.removeAllGroups();       toast.add({ severity: 'info', summary: t('live_order.toast.source_removed'), detail: target.label, life: 2000 })
     },
   })
 }
@@ -510,7 +551,7 @@ function endAllProducts(): void {
   selectedProducts.value.forEach(p => {
     if (p.status === 'live') { p.status = 'done'; changed++ }
   })
-  toast.add({
+  toast.removeAllGroups();   toast.add({
     severity: 'success',
     summary: t('live_order.toast.ordering_ended'),
     detail: t('live_order.toast.ordering_ended_detail', { count: changed }),

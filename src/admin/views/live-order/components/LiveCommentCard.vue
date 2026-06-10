@@ -55,7 +55,10 @@
         </button>
       </div>
       <div class="flex items-center gap-1 mt-auto">
-        <i :class="platformMeta.platformIcon" :style="`font-size:10px; color:${platformMeta.platformColor}`"></i>
+        <FontAwesomeIcon
+          :icon="platformMeta.platformIcon"
+          :style="{ fontSize: '10px', color: platformMeta.platformColor }"
+        />
         <span class="text-[10px] text-[var(--p-text-muted-color)] whitespace-nowrap">{{ comment.time }}</span>
       </div>
     </div>
@@ -66,7 +69,8 @@
       :comment="comment"
       :product="orderMatch?.product ?? undefined"
       :quantity="orderMatch?.quantity"
-      :platform-meta="platformMeta" />
+      :platform-meta="platformMeta"
+      @remove="onOrderRemoved" />
     <!-- 追加訂單 Dialog：挑選收單中的商品 -->
     <AddOrderDialog v-model:visible="addOrderVisible" :products="liveProducts" :user="comment.user" @submit="onAddOrderSubmit" />
   </div>
@@ -93,7 +97,7 @@ interface LiveComment {
 }
 
 interface PlatformMeta {
-  platformIcon: string
+  platformIcon: [string, string]
   platformColor: string
 }
 
@@ -111,9 +115,12 @@ interface Props {
   platformMeta: PlatformMeta
   /** 目前收單中（status==='live'）的商品，供「追加訂單」挑選 */
   liveProducts?: LiveProductLike[]
+  /** 當前場次所有商品（含尚未收單的）；訂單明細用此 prop 配對留言提及的商品。 */
+  sessionProducts?: LiveProductLike[]
 }
 const props = withDefaults(defineProps<Props>(), {
   liveProducts: () => [],
+  sessionProducts: () => [],
 })
 
 const emit = defineEmits<{
@@ -129,22 +136,38 @@ const isBlacklist = computed(() => props.comment.tagType === 'blacklist')
 const hasPlusOne  = computed(() => !isBlacklist.value && /\+\d+/.test(props.comment.text || ''))
 /** 透過「追加訂單」成功送出後標記為已下單（留言文字本身沒有「+N」） */
 const manuallyOrdered = ref(false)
-/** 已成功下標：留言含「+N」或追加訂單成功，且未被黑名單；否則顯示「追加訂單」入口 */
-const hasOrdered  = computed(() => hasPlusOne.value || (!isBlacklist.value && manuallyOrdered.value))
+/** 訂單明細按「解除訂單」後本地標記，移除綠勾並把 action icon 切回「追加訂單」。 */
+const isOrderRemoved = ref(false)
+/** 已成功下標：留言含「+N」或追加訂單成功，且未被黑名單、未被解除；否則顯示「追加訂單」入口 */
+const hasOrdered  = computed(() =>
+  !isOrderRemoved.value
+  && (hasPlusOne.value || (!isBlacklist.value && manuallyOrdered.value)),
+)
 
 /**
- * 解析留言中的「{關鍵字}+{數量}」並配對到收單中的商品卡。
- * 關鍵字對應商品的 `keyword`（或 sku 前綴）；數量取自「+N」。
+ * 解析留言中的「{識別字}+{數量}」並配對到當前場次的商品（不限 status）。
+ *
+ * 為什麼搜全場次而不只 liveProducts？訂單明細需要顯示留言對應的商品；
+ * 即使該商品尚未按「開始收單」變 live，留言提到它就該對得上。
+ * 是否算「已下單」（綠勾）由 hasPlusOne 判斷，跟這裡分離。
+ *
+ * 識別字支援：
+ * - 中文 / 全形商品名稱（例如「草莓大福+1」）→ 用 product.name 比對
+ * - 英數關鍵字 / SKU 前綴（例如「STRW+1」）→ 用 keyword / sku 比對
  */
 const orderMatch = computed(() => {
-  const m = (props.comment.text || '').match(/([A-Za-z0-9]+)\+(\d+)/)
+  const m = (props.comment.text || '').match(/([^+\s]+)\+(\d+)/)
   if (!m) return null
-  const keyword = m[1]
+  const identifier = m[1]
   const quantity = Number(m[2])
-  const product = props.liveProducts.find(p =>
-    (p.keyword && p.keyword === keyword) || (p.sku && p.sku.split('-')[0] === keyword),
+  // 配對來源：sessionProducts > liveProducts（向下相容仍只傳 liveProducts 的場合）
+  const pool = props.sessionProducts.length > 0 ? props.sessionProducts : props.liveProducts
+  const product = pool.find(p =>
+    (p.name && p.name === identifier)
+    || (p.keyword && p.keyword === identifier)
+    || (p.sku && p.sku.split('-')[0] === identifier),
   ) ?? null
-  return { keyword, quantity, product }
+  return { keyword: identifier, quantity, product }
 })
 
 const detailVisible = ref(false)
@@ -179,10 +202,28 @@ function onActionClick(): void {
   else addOrderVisible.value = true
 }
 
+/**
+ * OrderDetailDialog 按下「解除訂單」後：
+ * - 標記本地 isOrderRemoved，hasOrdered 變 false → 綠勾消失、action icon 回到「追加訂單」
+ * - 同步重設 manuallyOrdered，避免之前手動追加的狀態又把 hasOrdered 拉回 true
+ * - 顯示 toast 通知使用者
+ */
+function onOrderRemoved(): void {
+  isOrderRemoved.value = true
+  manuallyOrdered.value = false
+  toast.removeAllGroups()
+  toast.add({
+    severity: 'success',
+    summary: t('live_order.toast.order_removed'),
+    detail: t('live_order.toast.order_removed_detail', { user: props.comment.user ?? '' }),
+    life: 2500,
+  })
+}
+
 /** 追加訂單送出：mock 以 toast 回饋（實際串接時改為寫入訂單）。 */
 function onAddOrderSubmit(payload: AddOrderPayload): void {
   manuallyOrdered.value = true
-  toast.add({
+  toast.removeAllGroups();   toast.add({
     severity: 'success',
     summary: t('live_order.toast.order_added'),
     detail: t('live_order.toast.order_added_detail', {
