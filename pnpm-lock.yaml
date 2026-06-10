@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@awesome.me/kit-979923bcd0':
+        specifier: ^1.0.3
+        version: 1.0.3
       '@fortawesome/fontawesome-svg-core':
         specifier: ^7.2.0
         version: 7.2.0
@@ -89,6 +92,10 @@ importers:
         version: 2.2.12(typescript@5.6.3)
 
 packages:
+
+  '@awesome.me/kit-979923bcd0@1.0.3':
+    resolution: {integrity: sha512-t0hXF5rMwDh/P2rdX/oX9+hIrYgXKZ5cuv00nsqi5X1tKXbPgIWTPDyBn6tBqRcWjWjpG5zYq6Ye0XxppAgRhw==}
+    engines: {node: '>=16'}
 
   '@babel/helper-string-parser@7.27.1':
     resolution: {integrity: sha512-qMlSxKbpRlAridDExk92nSobyDdpPijUq2DW6oDnUqd0iOGxmQjyqhMIihI9+zv4LPyZdRje2cavWPbCbWm3eA==}
@@ -914,6 +921,10 @@ packages:
     resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
 snapshots:
+
+  '@awesome.me/kit-979923bcd0@1.0.3':
+    dependencies:
+      '@fortawesome/fontawesome-common-types': 7.2.0
 
   '@babel/helper-string-parser@7.27.1': {}
 

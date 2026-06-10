@@ -79,7 +79,7 @@ function resolveChildKey(child: MenuItem, index: number): string {
       <Transition name="menu-label">
         <FontAwesomeIcon
           v-if="props.isExpanded"
-          :icon="['fas', 'chevron-down']"
+          :icon="['far', 'chevron-down']"
           class="text-sm transition-all duration-200"
           :rotation="isExpandedMenu ? 180 : undefined"
         />

@@ -82,7 +82,7 @@ onUnmounted(() => hideDebounced.cancel());
       @mouseleave="hideDebounced"
     >
       <template #icon>
-        <FontAwesomeIcon :icon="['fas', icon]" />
+        <FontAwesomeIcon :icon="['far', icon]" />
       </template>
     </Button>
 
@@ -104,7 +104,7 @@ onUnmounted(() => hideDebounced.cancel());
           >
             <FontAwesomeIcon
               v-if="slotProps.item.icon"
-              :icon="['fas', slotProps.item.icon as string]"
+              :icon="['far', slotProps.item.icon as string]"
             />
             {{ slotProps.item.label }}
           </div>

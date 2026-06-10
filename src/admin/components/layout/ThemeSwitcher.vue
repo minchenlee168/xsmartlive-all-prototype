@@ -33,7 +33,7 @@ function setTheme(value: string) {
         }"
         @click="setTheme(item.value)"
       >
-        <FontAwesomeIcon :icon="['fas', item.icon]" />
+        <FontAwesomeIcon :icon="['far', item.icon]" />
         {{ item.label }}
       </div>
     </template>

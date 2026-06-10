@@ -67,7 +67,7 @@ async function handleClickMerchantManagement() {
           @click="handleClickMerchantManagement"
         >
           <FontAwesomeIcon
-            :icon="['fas', isMerchantManagementMode ? 'chevron-left' : 'building-user']"
+            :icon="['far', isMerchantManagementMode ? 'chevron-left' : 'building-user']"
             class="text-base"
           />
           <span
@@ -122,7 +122,7 @@ async function handleClickMerchantManagement() {
         @click="handleClickMerchantManagement"
       >
         <FontAwesomeIcon
-          :icon="['fas', isMerchantManagementMode ? 'chevron-left' : 'building-user']"
+          :icon="['far', isMerchantManagementMode ? 'chevron-left' : 'building-user']"
           class="text-base"
         />
         <span

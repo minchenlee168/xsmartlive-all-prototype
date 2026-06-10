@@ -22,32 +22,32 @@ export interface MenuItem {
 export const sidebarMenu: MenuItem[] = [
   {
     labelKey: 'nav.live',
-    icon: ['fas', 'tower-broadcast'],
+    icon: ['far', 'tower-broadcast'],
     items: [
       {
         labelKey: 'nav.live_order',
-        icon: ['fas', 'file-circle-plus'],
+        icon: ['far', 'file-circle-plus'],
         to: RouteName.LiveOrder,
       },
       {
         labelKey: 'nav.live_records',
-        icon: ['fas', 'clipboard-list'],
+        icon: ['far', 'clipboard-list'],
         to: RouteName.LiveRecords,
       },
     ],
   },
   {
     labelKey: 'nav.marketing',
-    icon: ['fas', 'bullhorn'],
+    icon: ['far', 'bullhorn'],
     items: [
       {
         labelKey: 'nav.bid_gift_lottery',
-        icon: ['fas', 'gift'],
+        icon: ['far', 'gift'],
         to: RouteName.BidGiftLotteryList,
       },
       {
         labelKey: 'nav.keyword_lottery',
-        icon: ['fas', 'hashtag'],
+        icon: ['far', 'hashtag'],
         to: RouteName.KeywordLotteryList,
       },
     ],
@@ -60,7 +60,7 @@ export const sidebarMenu: MenuItem[] = [
 export const merchantManagementMenu: MenuItem[] = [
   {
     labelKey: 'nav.merchant_management.store_management',
-    icon: ['fas', 'shop'],
+    icon: ['far', 'shop'],
     to: RouteName.StoreManagement,
   },
 ]

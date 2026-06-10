@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# FontAwesome Pro kit token — 嚴禁推上 GitHub
+.npmrc
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -89,7 +89,7 @@ function handleLogout() {
         @click="configStore.toggleSidebar"
       >
         <template #icon>
-          <FontAwesomeIcon :icon="['fas', 'chevron-left']" />
+          <FontAwesomeIcon :icon="['far', 'chevron-left']" />
         </template>
       </Button>
       <div id="topbar-left-slot" />
@@ -105,7 +105,7 @@ function handleLogout() {
         <span class="text-sm text-color-secondary">{{ t('topbar.current_at') }}</span>
         <span class="text-primary font-medium text-sm mx-1">{{ currentShop?.name ?? '-' }}</span>
         <FontAwesomeIcon
-          :icon="['fas', 'chevron-down']"
+          :icon="['far', 'chevron-down']"
           class="text-xs"
         />
       </Button>
@@ -140,7 +140,7 @@ function handleLogout() {
         @click="handleFrontView"
       >
         <template #icon>
-          <FontAwesomeIcon :icon="['fas', 'eye']" />
+          <FontAwesomeIcon :icon="['far', 'eye']" />
         </template>
       </Button>
     </div>
