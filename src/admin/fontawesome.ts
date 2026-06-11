@@ -75,6 +75,7 @@ import {
 import {
   faFacebook,
   faInstagram,
+  faTiktok,
 } from '@awesome.me/kit-979923bcd0/icons/classic/brands'
 
 /**
@@ -152,4 +153,5 @@ library.add(
   // fab（Pro kit brands）— 平台識別圖示
   faFacebook,
   faInstagram,
+  faTiktok,
 )

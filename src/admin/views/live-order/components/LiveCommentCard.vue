@@ -49,9 +49,14 @@
           v-tooltip.top="isBlacklist ? t('live_order.tooltip.remove_from_blacklist') : t('live_order.tooltip.add_to_blacklist')">
           <i :class="isBlacklist ? 'pi pi-lock-open' : 'pi pi-lock'" style="font-size:13px"></i>
         </button>
-        <button @click="onActionClick" class="text-[var(--p-text-muted-color)] hover:text-[var(--p-text-color)]"
-          v-tooltip.top="hasOrdered ? t('live_order.tooltip.order_detail') : t('live_order.tooltip.add_order')">
-          <i :class="hasOrdered ? 'pi pi-search' : 'pi pi-plus'" style="font-size:13px"></i>
+        <!-- 已下單 → 隱藏「查看訂單明細」按鈕；未下單時才顯示「追加訂單」 -->
+        <button
+          v-if="!hasOrdered"
+          @click="onActionClick"
+          class="text-[var(--p-text-muted-color)] hover:text-[var(--p-text-color)]"
+          v-tooltip.top="t('live_order.tooltip.add_order')"
+        >
+          <i class="pi pi-plus" style="font-size:13px"></i>
         </button>
       </div>
       <div class="flex items-center gap-1 mt-auto">
@@ -136,8 +141,8 @@ const isBlacklist = computed(() => props.comment.tagType === 'blacklist')
 const manuallyOrdered = ref(false)
 /** 訂單明細按「解除訂單」後本地標記，移除綠勾並把 action icon 切回「追加訂單」。 */
 const isOrderRemoved = ref(false)
-/** 「追加訂單」時記下使用者實際選的商品 / 數量；訂單明細彈窗會用這個列出。 */
-interface ManualItem { productId: number; qty: number }
+/** 「追加訂單」時記下使用者實際選的商品 / 規格 / 數量；訂單明細彈窗會用這個列出。 */
+interface ManualItem { productId: number; specId?: number; qty: number }
 const manualOrderItems = ref<ManualItem[]>([])
 
 /**
@@ -297,7 +302,11 @@ function onAddOrderSubmit(payload: AddOrderPayload): void {
   // 解除過後重新送出 → 取消 isOrderRemoved，hasOrdered 才會重新亮綠勾
   isOrderRemoved.value = false
   manuallyOrdered.value = true
-  manualOrderItems.value = payload.items.map((it) => ({ productId: it.productId, qty: it.qty }))
+  manualOrderItems.value = payload.items.map((it) => ({
+    productId: it.productId,
+    specId: it.specId,
+    qty: it.qty,
+  }))
   toast.removeAllGroups()
   toast.add({
     severity: 'success',
@@ -346,11 +355,23 @@ const detailItems = computed<DetailItemInput[]>(() => {
       .map((it): DetailItemInput | null => {
         const p = pool.find((x) => x.id === it.productId)
         if (!p) return null
+        // 有 specId → 從商品的 selectedSpecs / specs 找對應規格，帶 spec.name / spec.price
+        let specName = ''
+        let unitPrice = (p.price as number | undefined) ?? 0
+        if (typeof it.specId === 'number') {
+          const specs = (((p as { selectedSpecs?: Array<{ id?: number; name?: string; price?: number }> }).selectedSpecs
+            ?? (p as { specs?: Array<{ id?: number; name?: string; price?: number }> }).specs ?? []) as Array<{ id?: number; name?: string; price?: number }>)
+          const matched = specs.find((s) => s.id === it.specId)
+          if (matched) {
+            specName = matched.name ?? ''
+            unitPrice = matched.price ?? unitPrice
+          }
+        }
         return {
           name: (p.name as string | undefined) ?? '',
-          spec: '',
+          spec: specName,
           qty: it.qty,
-          unitPrice: (p.price as number | undefined) ?? 0,
+          unitPrice,
           isGift: !!(p as { isGift?: boolean }).isGift,
         }
       })

@@ -7,6 +7,7 @@
     <!-- ── Toolbar ─────────────────────────────────── -->
     <div class="flex items-center gap-2 flex-wrap">
       <SessionSelector
+        v-if="!isPostMode"
         :sessions="sessions"
         :selected="currentSession"
         :live-elapsed="elapsedDisplay"
@@ -41,33 +42,50 @@
         </button>
       </span>
       <Menu id="add-product-menu" ref="addProductMenuRef" :model="addProductMenuItems" :popup="true" />
-      <span v-tooltip.bottom="currentSession ? '' : t('live_order.tooltip.pick_source_first')" class="inline-flex">
-        <!-- SplitButton：主動作開「批次設定」；下拉選擇「面板設定」 -->
+      <template v-if="!isPostMode">
+        <span v-tooltip.bottom="currentSession ? '' : t('live_order.tooltip.pick_source_first')" class="inline-flex">
+          <!-- SplitButton：主動作開「批次設定」；下拉選擇「面板設定」 -->
+          <button
+            @click="batchEditDialogVisible = true"
+            :disabled="!currentSession"
+            :class="['border px-[11.5px] py-[8px] rounded-l-[6px] text-[14px] font-medium flex items-center gap-[7px] border-r-0',
+              currentSession
+                ? 'bg-[var(--p-content-background)] border-[var(--p-primary-color)] text-[var(--p-primary-color)] hover:bg-[var(--p-primary-50)]'
+                : 'bg-[var(--p-content-hover-background)] border-[var(--p-content-border-color)] text-[var(--p-text-muted-color)] cursor-not-allowed']"
+          >
+            <FontAwesomeIcon :icon="['far', 'gear']" class="text-[14px]" />{{ t('live_order.button.batch_edit') }}
+          </button>
+          <button
+            ref="batchEditMenuTriggerRef"
+            @click="openBatchEditMenu"
+            :disabled="!currentSession"
+            aria-haspopup="true"
+            aria-controls="batch-edit-menu"
+            :class="['border px-[8px] py-[8px] rounded-r-[6px] text-[14px] font-medium flex items-center',
+              currentSession
+                ? 'bg-[var(--p-content-background)] border-[var(--p-primary-color)] text-[var(--p-primary-color)] hover:bg-[var(--p-primary-50)]'
+                : 'bg-[var(--p-content-hover-background)] border-[var(--p-content-border-color)] text-[var(--p-text-muted-color)] cursor-not-allowed']"
+          >
+            <i class="pi pi-chevron-down" style="font-size:12px"></i>
+          </button>
+        </span>
+        <Menu id="batch-edit-menu" ref="batchEditMenuRef" :model="batchEditMenuItems" :popup="true" />
+      </template>
+
+      <!-- 貼文收單：用一顆「選擇貼文」按鈕取代右側 pick-source 大區塊 -->
+      <span v-if="isPostMode" v-tooltip.bottom="canPickSource ? '' : t('live_order.tooltip.add_product_first')">
         <button
-          @click="batchEditDialogVisible = true"
-          :disabled="!currentSession"
-          :class="['border px-[11.5px] py-[8px] rounded-l-[6px] text-[14px] font-medium flex items-center gap-[7px] border-r-0',
-            currentSession
+          @click="onPickSource"
+          :disabled="!canPickSource"
+          :class="['border px-[11.5px] py-[8px] rounded-[6px] text-[14px] font-medium flex items-center gap-[7px]',
+            canPickSource
               ? 'bg-[var(--p-content-background)] border-[var(--p-primary-color)] text-[var(--p-primary-color)] hover:bg-[var(--p-primary-50)]'
               : 'bg-[var(--p-content-hover-background)] border-[var(--p-content-border-color)] text-[var(--p-text-muted-color)] cursor-not-allowed']"
         >
-          <FontAwesomeIcon :icon="['far', 'gear']" class="text-[14px]" />{{ t('live_order.button.batch_edit') }}
-        </button>
-        <button
-          ref="batchEditMenuTriggerRef"
-          @click="openBatchEditMenu"
-          :disabled="!currentSession"
-          aria-haspopup="true"
-          aria-controls="batch-edit-menu"
-          :class="['border px-[8px] py-[8px] rounded-r-[6px] text-[14px] font-medium flex items-center',
-            currentSession
-              ? 'bg-[var(--p-content-background)] border-[var(--p-primary-color)] text-[var(--p-primary-color)] hover:bg-[var(--p-primary-50)]'
-              : 'bg-[var(--p-content-hover-background)] border-[var(--p-content-border-color)] text-[var(--p-text-muted-color)] cursor-not-allowed']"
-        >
-          <i class="pi pi-chevron-down" style="font-size:12px"></i>
+          <FontAwesomeIcon :icon="['far', 'comment']" class="text-[14px]" />
+          {{ t('live_order.button.pick_post') }}
         </button>
       </span>
-      <Menu id="batch-edit-menu" ref="batchEditMenuRef" :model="batchEditMenuItems" :popup="true" />
 
       <!-- 商品狀態統計：跟功能鈕同列，緊跟 BatchEdit；一直顯示（即使沒選收單來源 / 沒商品也顯示 0） -->
       <div
@@ -87,14 +105,6 @@
         >
           <FontAwesomeIcon :icon="['far', 'circle-pause']" class="text-[16px]" />
           {{ statusCounts.ready }}
-        </span>
-        <span class="w-px h-3 bg-[var(--p-content-border-color)]" />
-        <span
-          v-tooltip.bottom="t('live_order.status.done')"
-          class="inline-flex items-center gap-1.5 text-[14px] font-medium text-[var(--p-text-muted-color)]"
-        >
-          <FontAwesomeIcon :icon="['far', 'circle-check']" class="text-[16px]" />
-          {{ statusCounts.done }}
         </span>
         <span class="w-px h-3 bg-[var(--p-content-border-color)]" />
         <span
@@ -131,7 +141,7 @@
       <div class="flex flex-1 min-h-0 gap-2">
         <div class="flex-1 flex flex-col self-stretch min-w-0 gap-2">
           <!-- 快速新增（與右側 panel 同高度起點） -->
-          <QuickAddProductForm v-if="currentSession" ref="quickAddRef" @submit="onQuickAddProducts" />
+          <QuickAddProductForm v-if="currentSession && !isPostMode" ref="quickAddRef" @submit="onQuickAddProducts" />
 
           <div v-if="selectedProducts.length === 0" class="flex flex-col items-center justify-center gap-3 pt-12">
             <i class="pi pi-inbox text-5xl text-[var(--p-text-muted-color)]"></i>
@@ -139,7 +149,15 @@
             <p class="text-[14px] leading-normal text-[var(--p-text-muted-color)]">{{ t('live_order.empty.no_product_hint') }}</p>
           </div>
           <div v-else class="flex-1 overflow-y-auto">
-            <div class="grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(232px, 1fr))">
+            <!-- 貼文收單走 table；其他模式維持商品卡 grid -->
+            <LiveProductTable
+              v-if="isPostMode"
+              :products="selectedProducts"
+              :sources="sources"
+              :ordering-enabled="hasAnySource"
+              @delete="onDeleteProduct"
+            />
+            <div v-else class="grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(232px, 1fr))">
               <LiveProductCard
                 v-for="p in selectedProducts"
                 :key="p.id"
@@ -147,13 +165,14 @@
                 :ordering-enabled="hasAnySource"
                 v-model:status="p.status"
                 @delete="onDeleteProduct"
+                @end-ordering="onCardEndOrdering"
               />
             </div>
           </div>
         </div>
 
-        <!-- 空狀態右側選擇收單來源（頂部對齊 QuickAdd） -->
-        <div class="w-[340px] shrink-0 flex flex-col items-center gap-3 self-stretch pt-12">
+        <!-- 空狀態右側選擇收單來源（頂部對齊 QuickAdd）— 貼文收單模式不顯示，改用 toolbar 的「選擇貼文」按鈕 -->
+        <div v-if="!isPostMode" class="w-[340px] shrink-0 flex flex-col items-center gap-3 self-stretch pt-12">
           <i class="pi pi-inbox text-5xl text-[var(--p-text-muted-color)]"></i>
           <p class="font-bold text-[18px] leading-normal text-[var(--p-text-color)]">{{ t('live_order.empty.no_order_content') }}</p>
           <p class="text-[14px] leading-normal text-[var(--p-text-muted-color)]">{{ pickSourceHelperText }}</p>
@@ -175,26 +194,38 @@
         :sources="sources"
         :products="selectedProducts"
         :show-comments="showComments"
+        :use-table="isPostMode"
         @pick-source="onPickSource"
         @remove-source="onRemoveSource"
-        @delete-product="onDeleteProduct">
+        @delete-product="onDeleteProduct"
+        @end-ordering-product="onCardEndOrdering">
         <template #products-header>
-          <QuickAddProductForm v-if="currentSession" ref="quickAddRef" @submit="onQuickAddProducts" />
+          <QuickAddProductForm v-if="currentSession && !isPostMode" ref="quickAddRef" @submit="onQuickAddProducts" />
         </template>
       </OrderModeView>
     </template>
 
     <LiveOrderSourceDialog v-model:visible="sourceDialogVisible"
       :used-post-ids="usedPostIds" :used-group-ids="usedGroupIds"
+      :mode="isPostMode ? 'post' : 'live'"
       @confirm="onSourceConfirmed" />
     <CreateSessionDialog v-model:visible="createDialogVisible" @create="onSessionCreate" />
     <AddProductDialog v-model:visible="addProductDialogVisible"
       :existing-products="selectedProducts" @add-products="onAddProducts" />
+    <AddBundleDialog v-model:visible="addBundleDialogVisible"
+      :existing-names="existingBundleNames" @add="onAddBundles" />
     <BatchEditDialog v-model:visible="batchEditDialogVisible"
       :products="selectedProducts" @apply="onBatchApply" @delete="onBatchDelete" />
     <PanelSettingsDialog v-model:visible="panelSettingsDialogVisible"
       :settings="panelSettings" @save="onPanelSettingsSave" />
     <GiftFormDialog v-model:visible="giftDialogVisible" @submit="onGiftSubmit" />
+    <EndOrderingSummaryDialog
+      v-model:visible="endSummaryDialogVisible"
+      :session-name="currentSession?.name ?? ''"
+      :products="endingSummaryProducts"
+      :mode="isPostMode ? 'post' : 'live'"
+      @submit="onEndSummarySave"
+    />
     <DuplicateProductDialog v-model:visible="duplicateDialogVisible" :names="duplicateNames" />
 
   </div>
@@ -202,6 +233,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
@@ -213,7 +245,11 @@ import LiveProductCard from './components/LiveProductCard.vue'
 import AddProductDialog from './components/AddProductDialog.vue'
 import BatchEditDialog from './components/BatchEditDialog.vue'
 import PanelSettingsDialog, { type PanelSettings } from './components/PanelSettingsDialog.vue'
+import AddBundleDialog, { type BundlePickPayload } from './components/AddBundleDialog.vue'
+import EndOrderingSummaryDialog, { type EndOrderingPayload } from './components/EndOrderingSummaryDialog.vue'
+import LiveProductTable from './components/LiveProductTable.vue'
 import QuickAddProductForm from './components/QuickAddProductForm.vue'
+import { addLiveOrderRecord } from './utils/liveOrderRecords'
 import GiftFormDialog, { type GiftSubmitPayload } from './components/GiftFormDialog.vue'
 import DuplicateProductDialog from './components/DuplicateProductDialog.vue'
 import { addToCatalog, isCatalogDuplicate } from './utils/productCatalog'
@@ -278,8 +314,18 @@ interface SourceConfirmExtras {
 const { t } = useI18n()
 const confirm = useConfirm()
 const toast = useToast()
+const route = useRoute()
+
+/**
+ * 頁面模式：依 route 名稱判斷。
+ * - `live.order` → 直播收單（完整功能）
+ * - `live.order.post` → 貼文收單（無場次、無批次設定、無快速新增）
+ * - `live.order.community` → 社群收單（保留完整功能）
+ */
+const isPostMode = computed(() => route.name === 'live.order.post')
 
 const addProductDialogVisible = ref(false)
+const addBundleDialogVisible = ref(false)
 const giftDialogVisible = ref(false)
 
 // SplitButton：主按鈕開選擇商品；下拉開禮物
@@ -291,6 +337,13 @@ interface MenuApi {
 const addProductMenuRef = ref<MenuApi | null>(null)
 const addProductMenuTriggerRef = ref<HTMLElement | null>(null)
 const addProductMenuItems = computed<MenuItem[]>(() => [
+  {
+    label: t('live_order.button.add_bundle'),
+    icon: 'pi pi-link',
+    command: () => {
+      addBundleDialogVisible.value = true
+    },
+  },
   {
     label: t('live_order.button.send_gift'),
     icon: 'pi pi-gift',
@@ -320,29 +373,15 @@ function openBatchEditMenu(event: Event): void {
   batchEditMenuRef.value?.toggle(event)
 }
 
-// 面板設定：原型階段以本地 state 保存，存擋僅 toast，並不影響其他畫面
+// 綜合收單頁設定：原型階段以本地 state 保存，存擋僅 toast
 const panelSettings = ref<PanelSettings>({
-  duplicateWinnerMode: 'latest',
-  plusOneRule: 'standard',
-  autoPreviewPrint: true,
-  noPreviewPrint: false,
-  autoReorder: true,
-  autoSaveAfterOpen: false,
+  duplicateOrderMode: 'keep_latest',
   allowKeywordCancel: true,
-  addonRemoveDays: 7,
-  notifyProductSales: true,
-  notifyWinnerList: true,
-  notifySpecSoldOut: false,
-  showMultiCart: true,
-  showSpec: true,
-  showCheckoutSpec: true,
-  showSku: true,
-  showCost: true,
-  showStock: true,
-  showWeight: true,
-  showOversell: true,
-  showPlusOneLimit: true,
-  showStarFilter: true,
+  notifyOrderStart: true,
+  notifyOrderEnd: true,
+  notifyOutOfStock: true,
+  notifyWinnerOrderCreated: false,
+  autoPrintShipment: true,
 })
 function onPanelSettingsSave(next: PanelSettings): void {
   panelSettings.value = next
@@ -428,6 +467,30 @@ const sessions = ref<LiveSession[]>([
 ])
 const currentSession = ref<LiveSession | null>(null)
 
+// 貼文收單沒有場次選擇器，自動把第一個場次當預設容器（純放商品 / 來源用）
+/**
+ * 貼文收單沒有場次選擇器；自動建立或挑一個「貼文」收單容器。
+ * 不沿用直播首播的場次名（避免「春季首播」這類直播文案出現在貼文收單）。
+ */
+watch(isPostMode, (post) => {
+  if (!post) return
+  // 已經有貼文用容器就保留；否則新建一筆，名稱用 post 主題
+  const existing = sessions.value.find((s) => s.name.startsWith(t('live_order.post.default_name')))
+  if (existing) {
+    currentSession.value = existing
+    return
+  }
+  const newPostSession: LiveSession = {
+    id: Date.now(),
+    name: t('live_order.post.default_name'),
+    date: new Date().toISOString().slice(0, 10).replace(/-/g, '/'),
+    products: [],
+    sources: [],
+  }
+  sessions.value.unshift(newPostSession)
+  currentSession.value = newPostSession
+}, { immediate: true })
+
 function onSessionSelect(s: LiveSession): void { currentSession.value = s }
 
 const createDialogVisible = ref(false)
@@ -502,6 +565,50 @@ function onDeleteProduct(id: number): void {
   if (idx === -1) return
   list.splice(idx, 1)
 }
+
+/**
+ * 從「組合商品」picker 把選好的 bundle 加進當前場次。
+ * 每個 bundle 映射成一張 isBundle 卡：本身有獨立 keyword/price/stock；
+ * 子商品 (bundleItems) 從 catalog 補上 name + spec 文字（顯示用）。
+ */
+function onAddBundles(payload: BundlePickPayload): void {
+  if (!currentSession.value) return
+  const target = currentSession.value.products
+  const existingNames = new Set(target.map((p) => p.name).filter((n): n is string => !!n))
+  let added = 0
+  payload.bundles.forEach((b) => {
+    if (existingNames.has(b.name)) return
+    target.push({
+      id: b.id,
+      name: b.name,
+      keyword: b.keyword,
+      sku: b.sku,
+      price: b.price,
+      stock: b.stock,
+      sold: 0,
+      status: 'ready',
+      specs: [],
+      isBundle: true,
+      bundleItems: b.bundleItems.map((it) => ({
+        catalogProductId: it.catalogProductId,
+        qty: it.qty,
+      })),
+    } as LiveProduct)
+    added++
+  })
+  toast.removeAllGroups()
+  toast.add({
+    severity: added > 0 ? 'success' : 'warn',
+    summary: added > 0 ? t('live_order.toast.bundles_added') : t('live_order.toast.bundles_not_added'),
+    detail: t('live_order.toast.bundles_added_detail', { count: added }),
+    life: 2500,
+  })
+}
+
+/** 當前場次內已加入的商品名稱（供 bundle picker 標「已加入」用） */
+const existingBundleNames = computed(() => new Set(
+  selectedProducts.value.map((p) => p.name).filter((n): n is string => !!n),
+))
 
 /** Merge newly added products into the current session, skipping duplicates. */
 function onAddProducts(products: LiveProduct[]): void {
@@ -595,6 +702,8 @@ function onSourceConfirmed(type: string, extras: SourceConfirmExtras = {}): void
     ig: 'live_order.source_type_label.ig',
     group: 'live_order.source_type_label.group',
     live: 'live_order.source_type_label.live',
+    tiktok: 'live_order.source_type_label.tiktok',
+    livebuy: 'live_order.source_type_label.livebuy',
   }
   const labelKey = labelKeyMap[type]
   if (!labelKey) return
@@ -646,26 +755,61 @@ function onRemoveSource(id: number | string): void {
   })
 }
 
-// ── 結束收單：所有商品變 done，來源保留 ─────────────
+// ── 結束收單：開彙總 dialog；右上「結束收單」結束全部 live 商品，單卡按鈕只結束該張 ──
+const endSummaryDialogVisible = ref(false)
+/** 這次摘要要結束的商品 id 集合；dialog 內容與儲存時 status 歸位都依此 */
+const endingProductIds = ref<Set<number>>(new Set())
+
+const endingSummaryProducts = computed(() =>
+  selectedProducts.value.filter((p) => endingProductIds.value.has(p.id)),
+)
+
 function confirmEndAllProducts(): void {
   if (!hasLiveProduct.value) return
-  const liveCount = selectedProducts.value.filter(p => p.status === 'live').length
-  confirm.require({
-    message: t('live_order.dialog.end_ordering_message', { count: liveCount }),
-    header: t('live_order.dialog.end_ordering_header'),
-    icon: 'pi pi-exclamation-triangle',
-    rejectProps: { label: t('live_order.button.cancel'), severity: 'secondary', outlined: true },
-    acceptProps: { label: t('live_order.button.end_ordering'), severity: 'danger' },
-    accept: () => endAllProducts(),
-  })
+  endingProductIds.value = new Set(
+    selectedProducts.value.filter((p) => p.status === 'live').map((p) => p.id),
+  )
+  endSummaryDialogVisible.value = true
 }
 
-function endAllProducts(): void {
-  let changed = 0
-  selectedProducts.value.forEach(p => {
-    if (p.status === 'live') { p.status = 'done'; changed++ }
+/** 商品卡（或 table 列）emit 的單筆結束收單 → 彙總彈窗只列那一張卡。 */
+function onCardEndOrdering(id: number): void {
+  endingProductIds.value = new Set([id])
+  endSummaryDialogVisible.value = true
+}
+
+/** Summary dialog 按下「儲存」：寫入收單紀錄、把摘要內商品 status 回 ready。 */
+function onEndSummarySave(payload: EndOrderingPayload): void {
+  const orderCount = payload.products.reduce((sum, p) => sum + p.winnerCount, 0)
+  addLiveOrderRecord({
+    sessionName: payload.sessionName,
+    endedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    totalAmount: payload.totalAmount,
+    productCount: payload.products.length,
+    orderCount,
+    products: payload.products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      keyword: p.keyword,
+      price: p.price,
+      winnerCount: p.winnerCount,
+      sold: p.sold,
+      total: p.total,
+      freeShipping: p.freeShipping,
+      specs: p.specs,
+    })),
   })
-  toast.removeAllGroups();   toast.add({
+  // 只把本次摘要的商品歸位
+  let changed = 0
+  selectedProducts.value.forEach((p) => {
+    if (endingProductIds.value.has(p.id) && p.status === 'live') {
+      p.status = 'ready'
+      changed++
+    }
+  })
+  endingProductIds.value = new Set()
+  toast.removeAllGroups()
+  toast.add({
     severity: 'success',
     summary: t('live_order.toast.ordering_ended'),
     detail: t('live_order.toast.ordering_ended_detail', { count: changed }),

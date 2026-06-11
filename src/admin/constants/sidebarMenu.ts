@@ -30,8 +30,18 @@ export const sidebarMenu: MenuItem[] = [
     items: [
       {
         labelKey: 'nav.live_order',
-        icon: ['far', 'file-circle-plus'],
+        icon: ['far', 'circle-play'],
         to: RouteName.LiveOrder,
+      },
+      {
+        labelKey: 'nav.live_order_post',
+        icon: ['far', 'comment'],
+        to: RouteName.LiveOrderPost,
+      },
+      {
+        labelKey: 'nav.live_order_community',
+        icon: ['far', 'users'],
+        to: RouteName.LiveOrderCommunity,
       },
       {
         labelKey: 'nav.live_records',

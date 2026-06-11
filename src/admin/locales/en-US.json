@@ -4,7 +4,9 @@
   },
   "nav": {
     "live": "Live Commerce",
-    "live_order": "Start Ordering",
+    "live_order": "Live ordering",
+    "live_order_post": "Post ordering",
+    "live_order_community": "Community ordering",
     "live_records": "Order records",
     "marketing": "Marketing",
     "bid_gift_lottery": "Bid Gift Lottery",
@@ -15,7 +17,9 @@
     }
   },
   "route": {
-    "live_order": "Start Ordering",
+    "live_order": "Live ordering",
+    "live_order_post": "Post ordering",
+    "live_order_community": "Community ordering",
     "live_records": "Order records",
     "bid_gift_lottery_list": "Bid Gift Lottery",
     "bid_gift_lottery_draw": "Bid Gift Lottery Draw",

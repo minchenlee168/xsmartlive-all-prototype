@@ -4,7 +4,9 @@
   },
   "nav": {
     "live": "直播收單區",
-    "live_order": "開始收單",
+    "live_order": "直播收單",
+    "live_order_post": "貼文收單",
+    "live_order_community": "社群收單",
     "live_records": "收單紀錄",
     "marketing": "行銷活動",
     "bid_gift_lottery": "得標禮抽獎",
@@ -15,7 +17,9 @@
     }
   },
   "route": {
-    "live_order": "開始收單",
+    "live_order": "直播收單",
+    "live_order_post": "貼文收單",
+    "live_order_community": "社群收單",
     "live_records": "收單紀錄",
     "bid_gift_lottery_list": "得標禮抽獎",
     "bid_gift_lottery_draw": "得標禮抽獎開獎",

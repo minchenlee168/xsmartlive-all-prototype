@@ -49,3 +49,70 @@ export function isCatalogDuplicate(name: string): boolean {
 export function addToCatalog(p: CatalogProduct): void {
   productCatalog.push(p)
 }
+
+/**
+ * 組合商品（mock）：由商家在「商品管理」事先建立，這裡是 catalog 端的清單。
+ * 直播收單頁的「選擇商品 → 組合商品」下拉會列出這份清單供商家挑選後加進場次。
+ *
+ * `bundleItems` 帶 catalogProductId 指回 productCatalog；組合售價 / 庫存獨立於子商品，
+ * 由商品管理那邊的設定決定（這裡用 mock 值）。
+ */
+export interface BundleItem {
+  catalogProductId: number
+  qty: number
+}
+export interface CatalogBundle {
+  id: number
+  name: string
+  sku: string
+  keyword: string
+  /** 組合售價（低於子商品原價合計 → 有組合優惠） */
+  price: number
+  /** 組合庫存（一般 = min(子商品庫存)） */
+  stock: number
+  status: string
+  bundleItems: BundleItem[]
+}
+
+export const bundleCatalog: CatalogBundle[] = reactive([
+  {
+    id: 9001,
+    name: '電競黃金組合（鍵盤 + 滑鼠）',
+    sku: 'BUNDLE-GAMING-001',
+    keyword: 'GAMING',
+    price: 4990,
+    stock: 8,
+    status: '上架中',
+    bundleItems: [
+      { catalogProductId: 7,  qty: 1 },
+      { catalogProductId: 10, qty: 1 },
+    ],
+  },
+  {
+    id: 9002,
+    name: 'Apple 周邊 3 件組（保護殼 + 螢幕保護貼 + 錶帶）',
+    sku: 'BUNDLE-APPLE-002',
+    keyword: 'APPLE3',
+    price: 1490,
+    stock: 30,
+    status: '上架中',
+    bundleItems: [
+      { catalogProductId: 1, qty: 1 },
+      { catalogProductId: 9, qty: 1 },
+      { catalogProductId: 6, qty: 1 },
+    ],
+  },
+  {
+    id: 9003,
+    name: '影音雙享組（耳機 + 藍牙喇叭）',
+    sku: 'BUNDLE-AUDIO-003',
+    keyword: 'AUDIO',
+    price: 11900,
+    stock: 5,
+    status: '上架中',
+    bundleItems: [
+      { catalogProductId: 2, qty: 1 },
+      { catalogProductId: 8, qty: 1 },
+    ],
+  },
+])

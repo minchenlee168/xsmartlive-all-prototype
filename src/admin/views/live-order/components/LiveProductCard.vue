@@ -182,11 +182,11 @@
             v-tooltip.top="t('live_order.tooltip.winner_list')">
             <i class="pi pi-list text-[var(--p-text-color)]" style="font-size:14px"></i>
           </button>
-          <!-- 編輯：禮物→新增禮物彈窗；一般商品→商品設定彈窗 -->
-          <button @click="openEditor"
+          <!-- 編輯：禮物→新增禮物彈窗；一般商品→商品設定彈窗（含下標設定欄位） -->
+          <button @click="openProductEdit"
             class="w-[35px] h-[30px] border border-[var(--p-content-border-color)] rounded-[6px] flex items-center justify-center hover:bg-[var(--p-content-hover-background)]"
-            v-tooltip.top="t('live_order.tooltip.set_product')">
-            <i class="pi pi-pencil text-[var(--p-text-color)]" style="font-size:14px"></i>
+            v-tooltip.top="t('live_order.tooltip.edit_product')">
+            <FontAwesomeIcon :icon="['far', 'pen']" class="text-[var(--p-text-color)] text-[14px]" />
           </button>
           <!-- 準備中：刪除（紅色，置於編輯右側）；收單中：暫停 -->
           <button v-if="status === 'live'"
@@ -203,22 +203,17 @@
 
         <!-- 右側動作 -->
         <template v-if="status === 'live'">
-          <!-- 紅色喇叭（推播，outlined） -->
+          <!-- 紅色喇叭（推播，outlined）；按下推播後邊框才加粗強調已發送 -->
           <button @click="onPushClick"
-            class="w-[35px] h-[35px] rounded-full bg-[var(--p-content-background)] border-2 border-[#ef4444] hover:bg-[#fee2e2] flex items-center justify-center" v-tooltip.top="t('live_order.tooltip.push')">
+            :class="['w-[35px] h-[35px] rounded-full bg-[var(--p-content-background)] border-[#ef4444] hover:bg-[#fee2e2] flex items-center justify-center',
+              hasPushed ? 'border-2' : 'border']"
+            v-tooltip.top="t('live_order.tooltip.push')">
             <FontAwesomeIcon :icon="['far', 'bullhorn']" class="text-[#ef4444] text-[13px]" />
           </button>
-          <!-- 紅色勾（結束收單／禮物為結束發送，filled） -->
-          <button @click="status = 'done'"
+          <!-- 紅色勾（結束收單／禮物為結束發送，filled）；emit 給父層開結束收單彙總彈窗 -->
+          <button @click="$emit('end-ordering', product.id)"
             class="w-[35px] h-[35px] rounded-full bg-[#ef4444] hover:bg-[#dc2626] flex items-center justify-center" v-tooltip.top="isGift ? t('live_order.tooltip.end_sending') : t('live_order.tooltip.end_ordering')">
             <i class="pi pi-check text-white" style="font-size:14px"></i>
-          </button>
-        </template>
-        <template v-else-if="status === 'done'">
-          <!-- 已結束：顯示重啟（灰圈） -->
-          <button @click="status = 'ready'"
-            class="w-[35px] h-[35px] rounded-full bg-[var(--p-text-muted-color)] hover:bg-[var(--p-text-muted-color)] flex items-center justify-center" v-tooltip.top="t('live_order.tooltip.restart')">
-            <i class="pi pi-refresh text-white" style="font-size:14px"></i>
           </button>
         </template>
         <template v-else>
@@ -234,7 +229,7 @@
     <!-- 得標人 Dialog -->
     <WinnerListDialog v-model:visible="winnerDialogVisible" :product="product" />
     <!-- 商品設定 Dialog（portal-vue 版表單） -->
-    <EditProductDialog v-model:visible="settingDialogVisible" :product="product" @save="onSettingSave" />
+    <EditProductDialog v-model:visible="editProductDialogVisible" :product="product" @save="onSettingSave" />
     <!-- 禮物編輯 Dialog：與「新增禮物」同一彈窗，帶入現有禮物資料 -->
     <GiftFormDialog v-model:visible="giftFormVisible" :product="product" @submit="onGiftEdit" />
     <!-- 規格價格編輯 Dialog（僅多規格商品開啟） -->
@@ -314,13 +309,18 @@ const props = withDefaults(defineProps<Props>(), {
 const isGift = computed(() => props.product?.isGift === true)
 const emit = defineEmits<{
   delete: [id: number]
+  'end-ordering': [id: number]
 }>()
 const { t } = useI18n()
 const confirm = useConfirm()
 const toast = useToast()
 
+/** 是否曾發送過推播；發送後喇叭按鈕邊框加粗以視覺強調。 */
+const hasPushed = ref(false)
+
 /** 推播：原型階段直接彈成功 toast，不接後端。 */
 function onPushClick(): void {
+  hasPushed.value = true
   toast.removeAllGroups()
   toast.add({
     severity: 'success',
@@ -330,7 +330,8 @@ function onPushClick(): void {
 }
 
 const winnerDialogVisible = ref(false)
-const settingDialogVisible = ref(false)
+/** 「編輯」按鈕（pencil）開啟的商品設定彈窗。 */
+const editProductDialogVisible = ref(false)
 const giftFormVisible = ref(false)
 const specPriceDialogVisible = ref(false)
 
@@ -365,10 +366,10 @@ function onSpecPriceApply(priceMap: Record<number, number>): void {
   if (prices.length > 0) props.product.price = Math.min(...prices)
 }
 
-/** 編輯入口：禮物商品開「新增禮物」彈窗，一般商品開商品設定彈窗。 */
-function openEditor(): void {
+/** 「編輯」入口（pencil）：禮物商品開「新增禮物」彈窗，一般商品開商品設定（含下標設定欄位）彈窗。 */
+function openProductEdit(): void {
   if (isGift.value) giftFormVisible.value = true
-  else settingDialogVisible.value = true
+  else editProductDialogVisible.value = true
 }
 
 /** 禮物編輯送出：把禮物表單值併回現有商品（與新增禮物的欄位對映一致）。 */
@@ -473,16 +474,11 @@ function savePrice(): void {
   isEditingPrice.value = false
 }
 
-// 設定 Dialog 儲存：把表單資料合併回 product，讓商品卡同步更新
 /**
- * Merge selected fields from the settings dialog back into product.
+ * Merge selected fields from EditProductDialog back into product.
  *
- * EditProductDialog 回的是 portal-vue 形狀：`specs: [{name, children:[{name}]}]` +
- * `variants: [{specIndex, stock, salePrice...}]`。商品卡的 `sourceSpecs` 期待
- * 扁平的 `[{name, stock}]`，故把 variants × specs.children 笛卡兒攤平後存進去；
- * 若 dialog 來源已經是扁平 specs（舊 ProductSettingForm 流程），就直接套用。
- *
- * 同時清掉 selectedSpecs——sourceSpecs 優先讀 selectedSpecs，不清會擋住新 specs。
+ * EditProductDialog 同時包含商品屬性（名稱/規格/售價/庫存）與下標設定欄位，
+ * 商品卡這顆「編輯」按鈕統一走它。
  */
 function onSettingSave(data: Record<string, unknown> | null | undefined): void {
   if (!data) return

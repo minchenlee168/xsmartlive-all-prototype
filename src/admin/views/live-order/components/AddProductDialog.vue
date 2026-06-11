@@ -423,7 +423,21 @@ const formRef = ref<ProductFormApi | null>(null)
 /** 跨展開/分頁記憶已勾選的項目；key = `p-{id}`（整個商品）或 `s-{id}`（單一規格）。 */
 const selectedItems = ref<Map<string, SelectedItem>>(new Map())
 const selectedCount = computed(() => selectedItems.value.size)
-const selectedNames = computed(() => Array.from(selectedItems.value.values()).map(it => it.name))
+/**
+ * 下標設定步驟顯示用：去除規格、依 productId 摺合成一個「主商品名」清單。
+ * 因為下標設定只套用到主商品，不需要逐規格列出。
+ */
+const selectedNames = computed(() => {
+  const seen = new Set<number>()
+  const names: string[] = []
+  selectedItems.value.forEach((it) => {
+    if (seen.has(it.productId)) return
+    seen.add(it.productId)
+    const parent = allPickerProducts.value.find((p) => p.id === it.productId)
+    names.push(parent?.name ?? it.name)
+  })
+  return names
+})
 
 watch(
   () => props.visible,

@@ -76,79 +76,16 @@
 
     <Divider class="!m-0" />
 
-    <!-- 訂單資訊 -->
-    <section class="px-5 pt-4">
-      <div class="text-[14px] font-semibold text-[var(--p-text-color)] mb-3">
-        {{ t('live_order.label.order_info') }}
-      </div>
-      <div class="flex flex-col gap-3">
-        <div class="flex items-center justify-between">
-          <span class="text-[13px] text-[var(--p-text-muted-color)]">{{ t('live_order.label.checkout_status') }}</span>
-          <!-- 禮物商品訂單顯示「無需結帳」（secondary），其他維持「未結帳」(warn) -->
-          <Tag :severity="detail.isGiftOrder ? 'secondary' : 'warn'" rounded>
-            <span class="flex items-center gap-1.5">
-              <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
-              {{ detail.isGiftOrder
-                ? t('live_order.table.value.checkout_not_required')
-                : t('live_order.table.value.checkout_unpaid') }}
-            </span>
-          </Tag>
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-[13px] text-[var(--p-text-muted-color)]">{{ t('live_order.table.column.created_at') }}</span>
-          <span class="text-[13px] text-[var(--p-text-color)]">
-            {{ detail.createdAt }}<template v-if="detail.daysAgo !== null">
-              <span class="text-[var(--p-text-muted-color)] ml-1">
-                {{ t('live_order.text.days_ago', { n: detail.daysAgo }) }}
-              </span>
-            </template>
-          </span>
-        </div>
-      </div>
-    </section>
-
-    <Divider class="!m-0 mt-4" />
-
-    <!-- 會員與來源 -->
+    <!-- 留言內容 -->
     <section class="px-5 py-4">
       <div class="text-[14px] font-semibold text-[var(--p-text-color)] mb-3">
-        {{ t('live_order.label.member_and_source') }}
+        {{ t('live_order.label.comment_content') }}
       </div>
-      <div class="flex flex-col gap-3">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3 min-w-0">
-            <Avatar :label="detail.initial" shape="circle" class="!bg-[var(--p-primary-color)] !text-white shrink-0" />
-            <div class="flex flex-col min-w-0">
-              <span class="text-[15px] font-semibold text-[var(--p-text-color)] truncate">{{ detail.memberName }}</span>
-              <span class="text-[12px] text-[var(--p-text-muted-color)]">
-                {{ detail.isVip ? t('live_order.label.vip_member') : t('live_order.label.regular_member') }}
-              </span>
-            </div>
-          </div>
-          <Button
-            :label="t('live_order.button.view_member')"
-            variant="link"
-            class="!px-0 shrink-0"
-          >
-            <template #icon>
-              <FontAwesomeIcon :icon="['far', 'angle-right']" class="ml-1" />
-            </template>
-          </Button>
-        </div>
-
-        <div class="flex flex-col gap-1.5">
-          <div class="flex items-center gap-2">
-            <FontAwesomeIcon :icon="['far', 'comment']" class="text-[var(--p-text-muted-color)] text-[14px]" />
-            <Chip
-              :label="detail.keyword"
-              :pt="{
-                root: { class: 'bg-[var(--p-primary-50)] py-1 px-3' },
-                label: { class: 'text-[var(--p-primary-color)] font-medium text-[13px]' },
-              }"
-            />
-          </div>
-          <span class="text-[12px] text-[var(--p-text-muted-color)] pl-6">{{ t('live_order.text.keyword_auto_order') }}</span>
-        </div>
+      <div class="flex items-start gap-2">
+        <FontAwesomeIcon :icon="['far', 'comment']" class="text-[var(--p-text-muted-color)] text-[14px] mt-0.5" />
+        <span class="text-[14px] text-[var(--p-text-color)] break-words leading-relaxed">
+          {{ detail.keyword || '—' }}
+        </span>
       </div>
     </section>
 

@@ -13,6 +13,14 @@
           <i class="pi pi-inbox" style="font-size:40px"></i>
           <span class="text-[13px]">{{ t('live_order.empty.no_product_added_hint') }}</span>
         </div>
+        <LiveProductTable
+          v-else-if="useTable"
+          :products="products"
+          :sources="sources"
+          :ordering-enabled="sources.length > 0"
+          @delete="(id) => emit('delete-product', id)"
+          @end-ordering="(id) => emit('end-ordering-product', id)"
+        />
         <div v-else class="grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(232px, 1fr))">
           <LiveProductCard
             v-for="p in products"
@@ -21,6 +29,7 @@
             :ordering-enabled="sources.length > 0"
             v-model:status="p.status"
             @delete="(id) => emit('delete-product', id)"
+            @end-ordering="(id) => emit('end-ordering-product', id)"
           />
         </div>
       </div>
@@ -30,8 +39,8 @@
     <aside :class="['shrink-0 flex flex-col gap-3 min-h-0 overflow-hidden',
                      showComments ? 'w-[340px]' : 'w-[240px]']">
 
-      <!-- 預覽區（只在 FB 系列來源時顯示，IG / TikTok 無影片畫面隱藏） -->
-      <div v-if="sources.length > 0 && hasPreview" class="relative shrink-0">
+      <!-- 預覽區（只在 FB 系列來源時顯示，IG / TikTok 無影片畫面隱藏；貼文收單一律不顯示） -->
+      <div v-if="sources.length > 0 && hasPreview && !useTable" class="relative shrink-0">
         <div class="bg-[#0f172a] rounded-[6px] overflow-hidden relative flex items-center justify-center" style="height:125px">
           <div class="bg-[var(--p-content-background)] rounded-[6px] overflow-hidden shadow-md flex flex-col" style="width:70px; height:113px">
             <div class="flex-1 bg-gradient-to-br from-[#fef3c7] via-[#fed7aa] to-[#fda4af] flex items-center justify-center">
@@ -149,6 +158,7 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import LiveProductCard from './LiveProductCard.vue'
+import LiveProductTable from './LiveProductTable.vue'
 import LiveCommentCard from './LiveCommentCard.vue'
 
 interface LiveSource {
@@ -196,17 +206,21 @@ interface Props {
   sources?: LiveSource[]
   products?: LiveProduct[]
   showComments?: boolean
+  /** 貼文收單模式：把商品卡 grid 換成 table。 */
+  useTable?: boolean
 }
 const props = withDefaults(defineProps<Props>(), {
   sources: () => [],
   products: () => [],
   showComments: true,
+  useTable: false,
 })
 
 const emit = defineEmits<{
   'pick-source': []
   'remove-source': [id: number | string]
   'delete-product': [id: number]
+  'end-ordering-product': [id: number]
 }>()
 
 const { t } = useI18n()
@@ -222,10 +236,15 @@ watch(() => props.showComments, (show) => {
 // 是否有商品已開始收單（status === 'live'）— 留言區顯示條件
 const hasLiveProduct = computed(() => props.products.some(p => p.status === 'live'))
 /**
- * 一旦任一商品開始收單（live）或已結束收單（done），就算「收單已啟動」。
- * 結束收單後若收單來源還在，仍可繼續查看留言；只有全部商品都還在 'ready' 時才顯示等待空狀態。
+ * 「收單已啟動」判定：
+ * - 任一商品 status === 'live' → 進行中
+ * - 任一商品 sold > 0 → 曾經收過單（結束收單後 status 回 'ready' 但 sold 留著）
+ * 全部商品都還在 'ready' 且 sold = 0 才顯示等待空狀態。
  */
-const hasOrderingStarted = computed(() => props.products.some(p => p.status === 'live' || p.status === 'done'))
+const hasOrderingStarted = computed(() => props.products.some(p =>
+  p.status === 'live'
+  || ((p as { sold?: number }).sold ?? 0) > 0,
+))
 
 // 收單中的商品 — 供留言卡「追加訂單」挑選
 const liveProducts = computed(() => props.products.filter(p => p.status === 'live'))
@@ -396,10 +415,12 @@ function onUnblacklist(id: number | string): void {
 }
 
 const platformsMap: Record<string, PlatformMeta> = {
-  fb:    { platformIcon: ['fab', 'facebook'],  platformColor: '#1877f2' },
-  ig:    { platformIcon: ['fab', 'instagram'], platformColor: '#db2777' },
-  group: { platformIcon: ['far', 'users'],     platformColor: '#16a34a' },
-  live:  { platformIcon: ['far', 'video'],     platformColor: '#ef4444' },
+  fb:      { platformIcon: ['fab', 'facebook'],  platformColor: '#1877f2' },
+  ig:      { platformIcon: ['fab', 'instagram'], platformColor: '#db2777' },
+  tiktok:  { platformIcon: ['fab', 'tiktok'],    platformColor: '#000000' },
+  livebuy: { platformIcon: ['far', 'video'],     platformColor: 'var(--p-primary-color)' },
+  group:   { platformIcon: ['far', 'users'],     platformColor: '#16a34a' },
+  live:    { platformIcon: ['far', 'video'],     platformColor: '#ef4444' },
 }
 /** Look up icon / colour metadata for a platform key; falls back to a neutral set. */
 function getPlatformMeta(type: string): PlatformMeta {

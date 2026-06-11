@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import EmptyState from '@/admin/components/ui/EmptyState.vue'
+import { liveOrderRecords } from '@/admin/views/live-order/utils/liveOrderRecords'
 
 /**
  * 收單紀錄頁：顯示所有已完成 / 進行中場次的彙總資料。
@@ -28,11 +29,26 @@ const filterOptions = computed(() => [
   { label: t('live_records.filter.last_month'), value: 'last_month' },
 ])
 
-const records = ref<SessionRecord[]>([
+const mockRecords: SessionRecord[] = [
   { id: 1001, name: '春季首播', date: '2026/05/13', productCount: 12, orderCount: 145, amount: 28960, sourceCount: 2, status: 'ended' },
   { id: 1002, name: '母親節特賣', date: '2026/05/10', productCount: 18, orderCount: 230, amount: 56780, sourceCount: 3, status: 'ended' },
   { id: 1003, name: '六月開團', date: '2026/06/01', productCount: 8, orderCount: 67, amount: 14530, sourceCount: 1, status: 'ongoing' },
   { id: 1004, name: '夏日清倉', date: '2026/06/02', productCount: 25, orderCount: 0, amount: 0, sourceCount: 0, status: 'ongoing' },
+]
+
+/** 收單頁結束收單寫進的紀錄（reactive shared）合併 mock 種子。 */
+const records = computed<SessionRecord[]>(() => [
+  ...liveOrderRecords.map((r) => ({
+    id: r.id,
+    name: r.sessionName,
+    date: r.endedAt.slice(0, 10).replace(/-/g, '/'),
+    productCount: r.productCount,
+    orderCount: r.orderCount,
+    amount: r.totalAmount,
+    sourceCount: 0,
+    status: 'ended' as const,
+  })),
+  ...mockRecords,
 ])
 
 function statusBadgeClass(status: SessionRecord['status']): string {
