@@ -191,7 +191,7 @@
               </div>
               <div class="px-2 py-[6px] shrink-0 ml-auto flex justify-center" style="width: 80px">
                 <Checkbox
-                  :model-value="isItemSelected('p-' + p.id)"
+                  :model-value="isProductChecked(p)"
                   binary
                   :disabled="isProductExisting(p)"
                   @change="toggleProduct(p)"
@@ -460,47 +460,68 @@ function toggleItem(item: SelectedItem): void {
  * 勾選 / 取消整個商品。
  *
  * 行為：
- * - 勾起 → 同步把該商品所有規格也勾起（UI 上每個 spec checkbox 都會打勾）
- * - 取消 → 同步把該商品所有規格 checkbox 也取消
+ * - 有規格 → 主商品本身不計入下標項，只把全部規格加入（取消則整批移除）
+ * - 沒規格 → 直接加入主商品本身（取消則移除）
  *
  * 內部以 Map 一次性更新，避免每個 spec 各自觸發 reactive 多次重渲染。
  */
 function toggleProduct(p: PickerProduct): void {
   const map = new Map(selectedItems.value)
   const productKey = `p-${p.id}`
-  const isOn = !map.has(productKey)
-  if (isOn) {
-    map.set(productKey, {
-      key: productKey,
-      productId: p.id,
-      itemId: p.id,
-      isSpec: false,
-      name: p.name,
-      sku: p.sku,
-      cost: p.cost,
-      price: p.price,
-      stock: p.stock,
-    })
-    p.specs.forEach((spec) => {
-      const k = `s-${spec.id}`
-      map.set(k, {
-        key: k,
-        productId: p.id,
-        itemId: spec.id,
-        isSpec: true,
-        name: `${p.name} - ${spec.name}`,
-        specName: spec.name,
-        sku: spec.sku,
-        cost: spec.cost,
-        price: spec.price,
-        stock: spec.stock,
+  const isOn = !isProductChecked(p)
+
+  if (p.specs.length > 0) {
+    // 有規格：只操作 spec 條目，主商品不入 map
+    if (isOn) {
+      p.specs.forEach((spec) => {
+        const k = `s-${spec.id}`
+        map.set(k, {
+          key: k,
+          productId: p.id,
+          itemId: spec.id,
+          isSpec: true,
+          name: `${p.name} - ${spec.name}`,
+          specName: spec.name,
+          sku: spec.sku,
+          cost: spec.cost,
+          price: spec.price,
+          stock: spec.stock,
+        })
       })
-    })
+    } else {
+      p.specs.forEach((spec) => map.delete(`s-${spec.id}`))
+    }
   } else {
-    map.delete(productKey)
-    p.specs.forEach((spec) => map.delete(`s-${spec.id}`))
+    // 沒規格：主商品本身就是下標項
+    if (isOn) {
+      map.set(productKey, {
+        key: productKey,
+        productId: p.id,
+        itemId: p.id,
+        isSpec: false,
+        name: p.name,
+        sku: p.sku,
+        cost: p.cost,
+        price: p.price,
+        stock: p.stock,
+      })
+    } else {
+      map.delete(productKey)
+    }
   }
   selectedItems.value = map
+}
+
+/**
+ * 主商品 checkbox 顯示狀態：
+ * - 有規格 → 所有規格皆已勾起才算「主商品已勾」
+ * - 沒規格 → 看主商品本身是否在 selectedItems
+ */
+function isProductChecked(p: PickerProduct): boolean {
+  if (p.specs.length > 0) {
+    return p.specs.every((spec) => selectedItems.value.has(`s-${spec.id}`))
+  }
+  return selectedItems.value.has(`p-${p.id}`)
 }
 
 /** 勾選單一規格，name 帶「商品 - 規格」格式、用 spec 的 cost/price/stock。 */
@@ -553,7 +574,7 @@ function onSaveForm(): void {
   let offset = 0
   const products: Array<Record<string, unknown>> = []
   groups.forEach((items, productId) => {
-    const parent = allPickerProducts.find((p) => p.id === productId)
+    const parent = allPickerProducts.value.find((p) => p.id === productId)
     const productItem = items.find((it) => !it.isSpec)
     const checkedSpecItems = items.filter((it) => it.isSpec)
     const parentSpecs = parent?.specs ?? []
@@ -631,6 +652,7 @@ const productCategories = computed(() => [
   { label: t('live_order.category.accessory'),   value: '配件' },
   { label: t('live_order.category.headphone'),   value: '耳機' },
   { label: t('live_order.category.apparel'),     value: '服飾' },
+  { label: t('live_order.category.quick_added'), value: '快速新增' },
 ])
 // 規格價格刻意拉開（模擬同商品不同規格各自不同售價）：商品卡可顯示價格區間。
 const pickerSpecsMap: Record<number, PickerSpec[]> = {
@@ -666,13 +688,15 @@ const pickerSpecsMap: Record<number, PickerSpec[]> = {
     { id: 1112, name: 'XXL / 灰',  sku: 'CLO-TS-001-XXL-GY', cost: 210, originalPrice: 640, price: 530, stock: 2 },
   ],
 }
-const pickerProductsRaw: PickerProductRaw[] = productCatalog
-const allPickerProducts: PickerProduct[] = pickerProductsRaw.map((p) => ({
-  ...p,
-  cost:          Math.round(p.price * 0.6),
-  originalPrice: Math.round(p.price * 1.2),
-  specs:         pickerSpecsMap[p.id] ?? [],
-}))
+// 用 computed 包起來，讓 productCatalog 透過 addToCatalog 新增條目時 picker 自動同步
+const allPickerProducts = computed<PickerProduct[]>(() =>
+  productCatalog.map((p) => ({
+    ...p,
+    cost:          Math.round(p.price * 0.6),
+    originalPrice: Math.round(p.price * 1.2),
+    specs:         pickerSpecsMap[p.id] ?? [],
+  })),
+)
 
 const pickerCategory = ref<string | null>(null)
 const pickerSearchField = ref('name')
@@ -695,7 +719,7 @@ function resetPicker(): void {
 }
 
 const filteredPickerProducts = computed(() =>
-  allPickerProducts.filter((p) => {
+  allPickerProducts.value.filter((p) => {
     if (pickerCategory.value && p.category !== pickerCategory.value) return false
     if (pickerOnlyAvailable.value && p.status !== '上架中') return false
     if (pickerKeyword.value) {

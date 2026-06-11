@@ -133,7 +133,10 @@
         <div v-if="displaySpecs.length" class="max-h-[104px] overflow-hidden">
           <div class="flex flex-wrap gap-1 content-start">
             <div v-for="spec in displaySpecs" :key="spec.label"
-              v-tooltip.top="t('live_order.label.spec_summary', { sold: spec.sold, stock: spec.stock })"
+              v-tooltip.top="{
+                value: t('live_order.label.spec_summary_with_price', { sold: spec.sold, stock: spec.stock, price: spec.price.toLocaleString() }),
+                escape: false,
+              }"
               class="border border-[var(--p-text-muted-color)] rounded-[6px] flex overflow-hidden text-[14px] font-bold text-[var(--p-text-color)] h-[26px] cursor-default">
               <span class="bg-[var(--p-content-hover-background)] border-r border-[var(--p-text-muted-color)] px-2 flex items-center justify-center leading-none">{{ spec.label }}</span>
               <span class="bg-[var(--p-content-background)] px-2 flex items-center justify-center min-w-[36px] leading-none">{{ spec.stock }}</span>
@@ -156,7 +159,10 @@
             <div class="text-[14px] font-medium text-[var(--p-text-color)] mb-2">{{ t('live_order.label.all_specs', { count: allSpecs.length }) }}</div>
             <div class="grid grid-cols-2 gap-1.5 max-h-[280px] overflow-y-auto pr-1">
               <div v-for="spec in allSpecs" :key="spec.label"
-                v-tooltip.top="t('live_order.label.spec_summary', { sold: spec.sold, stock: spec.stock })"
+                v-tooltip.top="{
+                value: t('live_order.label.spec_summary_with_price', { sold: spec.sold, stock: spec.stock, price: spec.price.toLocaleString() }),
+                escape: false,
+              }"
                 class="border border-[var(--p-text-muted-color)] rounded-[6px] flex overflow-hidden text-[14px] font-bold text-[var(--p-text-color)] h-[26px] cursor-default">
                 <span class="bg-[var(--p-content-hover-background)] border-r border-[var(--p-text-muted-color)] px-2 flex-1 flex items-center justify-center leading-none">{{ spec.label }}</span>
                 <span class="bg-[var(--p-content-background)] px-2 flex items-center justify-center min-w-[40px] leading-none">{{ spec.stock }}</span>
@@ -288,6 +294,8 @@ interface DisplaySpec {
   specName: string
   stock: number
   sold: number
+  /** 規格售價；hover tooltip 用。沒設規格價時 fallback 商品本身 price。 */
+  price: number
 }
 
 interface PopoverApi {
@@ -626,6 +634,7 @@ const allSpecs = computed<DisplaySpec[]>(() => {
   const specs = sourceSpecs.value
   if (specs.length === 0) return []
 
+  const fallbackPrice = props.product.price ?? 0
   return specs.map((s) => {
     const name = s.name || s.sku || ''
     return {
@@ -633,6 +642,7 @@ const allSpecs = computed<DisplaySpec[]>(() => {
       specName: name,
       stock: s.stock ?? 0,
       sold: s.sold ?? Math.max(0, Math.floor((s.stock ?? 0) * 0.4)),
+      price: s.price ?? fallbackPrice,
     }
   })
 })

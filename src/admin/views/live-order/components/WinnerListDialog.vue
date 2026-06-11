@@ -2,7 +2,7 @@
   <Dialog
     v-model:visible="innerVisible"
     modal :draggable="false"
-    :style="{ width: '900px' }"
+    :style="{ width: '1100px' }"
     :pt="{
       header:  { style: 'padding: 17.5px' },
       content: { style: 'padding: 0 17.5px 17.5px' },
@@ -14,7 +14,16 @@
     </template>
 
     <div class="flex flex-col gap-4">
-      <DataTable :value="orders" :striped-rows="true" class="w-full">
+      <DataTable
+        :value="orders"
+        :striped-rows="true"
+        class="w-full"
+        :pt="{
+          column: {
+            headerCell: { style: 'white-space: nowrap;' },
+          },
+        }"
+      >
         <Column field="orderNo" :header="t('live_order.table.column.order_no')">
           <template #body="{ data }"><span class="text-[16px] text-[var(--p-text-color)]">{{ data.orderNo }}</span></template>
         </Column>

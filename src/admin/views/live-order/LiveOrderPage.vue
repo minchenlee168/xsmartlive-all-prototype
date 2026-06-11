@@ -41,19 +41,37 @@
         </button>
       </span>
       <Menu id="add-product-menu" ref="addProductMenuRef" :model="addProductMenuItems" :popup="true" />
-      <span v-tooltip.bottom="currentSession ? '' : t('live_order.tooltip.pick_source_first')">
-        <button @click="batchEditDialogVisible = true" :disabled="!currentSession"
-          :class="['border px-[11.5px] py-[8px] rounded-[6px] text-[14px] font-medium flex items-center gap-[7px]',
+      <span v-tooltip.bottom="currentSession ? '' : t('live_order.tooltip.pick_source_first')" class="inline-flex">
+        <!-- SplitButton：主動作開「批次設定」；下拉選擇「面板設定」 -->
+        <button
+          @click="batchEditDialogVisible = true"
+          :disabled="!currentSession"
+          :class="['border px-[11.5px] py-[8px] rounded-l-[6px] text-[14px] font-medium flex items-center gap-[7px] border-r-0',
             currentSession
               ? 'bg-[var(--p-content-background)] border-[var(--p-primary-color)] text-[var(--p-primary-color)] hover:bg-[var(--p-primary-50)]'
-              : 'bg-[var(--p-content-hover-background)] border-[var(--p-content-border-color)] text-[var(--p-text-muted-color)] cursor-not-allowed']">
+              : 'bg-[var(--p-content-hover-background)] border-[var(--p-content-border-color)] text-[var(--p-text-muted-color)] cursor-not-allowed']"
+        >
           <FontAwesomeIcon :icon="['far', 'gear']" class="text-[14px]" />{{ t('live_order.button.batch_edit') }}
         </button>
+        <button
+          ref="batchEditMenuTriggerRef"
+          @click="openBatchEditMenu"
+          :disabled="!currentSession"
+          aria-haspopup="true"
+          aria-controls="batch-edit-menu"
+          :class="['border px-[8px] py-[8px] rounded-r-[6px] text-[14px] font-medium flex items-center',
+            currentSession
+              ? 'bg-[var(--p-content-background)] border-[var(--p-primary-color)] text-[var(--p-primary-color)] hover:bg-[var(--p-primary-50)]'
+              : 'bg-[var(--p-content-hover-background)] border-[var(--p-content-border-color)] text-[var(--p-text-muted-color)] cursor-not-allowed']"
+        >
+          <i class="pi pi-chevron-down" style="font-size:12px"></i>
+        </button>
       </span>
+      <Menu id="batch-edit-menu" ref="batchEditMenuRef" :model="batchEditMenuItems" :popup="true" />
 
       <!-- 商品狀態統計：跟功能鈕同列，緊跟 BatchEdit；一直顯示（即使沒選收單來源 / 沒商品也顯示 0） -->
       <div
-        class="flex items-center gap-3 px-3 py-1.5 rounded-[6px] border border-[var(--p-content-border-color)] bg-[var(--p-content-background)]"
+        class="flex items-center gap-3 px-3 py-[8px] rounded-[6px] border border-[var(--p-content-border-color)] bg-[var(--p-content-background)]"
       >
         <span
           v-tooltip.bottom="t('live_order.status.live')"
@@ -174,6 +192,8 @@
       :existing-products="selectedProducts" @add-products="onAddProducts" />
     <BatchEditDialog v-model:visible="batchEditDialogVisible"
       :products="selectedProducts" @apply="onBatchApply" @delete="onBatchDelete" />
+    <PanelSettingsDialog v-model:visible="panelSettingsDialogVisible"
+      :settings="panelSettings" @save="onPanelSettingsSave" />
     <GiftFormDialog v-model:visible="giftDialogVisible" @submit="onGiftSubmit" />
     <DuplicateProductDialog v-model:visible="duplicateDialogVisible" :names="duplicateNames" />
 
@@ -192,10 +212,11 @@ import OrderModeView from './components/OrderModeView.vue'
 import LiveProductCard from './components/LiveProductCard.vue'
 import AddProductDialog from './components/AddProductDialog.vue'
 import BatchEditDialog from './components/BatchEditDialog.vue'
+import PanelSettingsDialog, { type PanelSettings } from './components/PanelSettingsDialog.vue'
 import QuickAddProductForm from './components/QuickAddProductForm.vue'
 import GiftFormDialog, { type GiftSubmitPayload } from './components/GiftFormDialog.vue'
 import DuplicateProductDialog from './components/DuplicateProductDialog.vue'
-import { isCatalogDuplicate } from './utils/productCatalog'
+import { addToCatalog, isCatalogDuplicate } from './utils/productCatalog'
 import type { MenuItem } from 'primevue/menuitem'
 
 interface ProductSpec {
@@ -282,6 +303,57 @@ function openAddProductMenu(event: Event): void {
   addProductMenuRef.value?.toggle(event)
 }
 
+// SplitButton：主按鈕開批次設定；下拉開面板設定
+const batchEditMenuRef = ref<MenuApi | null>(null)
+const batchEditMenuTriggerRef = ref<HTMLElement | null>(null)
+const panelSettingsDialogVisible = ref(false)
+const batchEditMenuItems = computed<MenuItem[]>(() => [
+  {
+    label: t('live_order.button.panel_setting'),
+    icon: 'pi pi-sliders-h',
+    command: () => {
+      panelSettingsDialogVisible.value = true
+    },
+  },
+])
+function openBatchEditMenu(event: Event): void {
+  batchEditMenuRef.value?.toggle(event)
+}
+
+// 面板設定：原型階段以本地 state 保存，存擋僅 toast，並不影響其他畫面
+const panelSettings = ref<PanelSettings>({
+  duplicateWinnerMode: 'latest',
+  plusOneRule: 'standard',
+  autoPreviewPrint: true,
+  noPreviewPrint: false,
+  autoReorder: true,
+  autoSaveAfterOpen: false,
+  allowKeywordCancel: true,
+  addonRemoveDays: 7,
+  notifyProductSales: true,
+  notifyWinnerList: true,
+  notifySpecSoldOut: false,
+  showMultiCart: true,
+  showSpec: true,
+  showCheckoutSpec: true,
+  showSku: true,
+  showCost: true,
+  showStock: true,
+  showWeight: true,
+  showOversell: true,
+  showPlusOneLimit: true,
+  showStarFilter: true,
+})
+function onPanelSettingsSave(next: PanelSettings): void {
+  panelSettings.value = next
+  toast.removeAllGroups()
+  toast.add({
+    severity: 'success',
+    summary: t('live_order.toast.panel_setting_saved'),
+    life: 2000,
+  })
+}
+
 /**
  * 送禮物送出：把禮物加進當前場次商品列表，呈現為商品卡。
  *
@@ -351,17 +423,10 @@ function onBatchDelete(productIds: number[]): void {
 
 // ── 場次 ─────────────────────────────────────────
 const sessions = ref<LiveSession[]>([
-  { id: 1, name: '春季首播', date: '2025/05/13', products: [
-    { id: 101, name: '草莓大福', sku: 'STRW-01', keyword: 'STRW', price: 120, stock: 50, sold: 0,
-      specs: [{ id: 1, name: '原味', stock: 30, sold: 0 }, { id: 2, name: '大份', stock: 20, sold: 0 }] },
-    { id: 102, name: '抹茶生乳捲蛋糕（季節限定）', sku: 'MTEA-02', keyword: 'MTEA', price: 280, stock: 30, sold: 0,
-      specs: [{ id: 1, name: '原味', stock: 18, sold: 0 }, { id: 2, name: '抹茶加倍', stock: 12, sold: 0 }] },
-    { id: 103, name: '限量小熊造型吊飾', sku: 'GIFT-01', keyword: 'BEAR', price: 0, stock: 20, sold: 0, isGift: true,
-      note: '感謝大家支持，小熊送給你們！', specs: [] },
-  ], sources: [] },
+  { id: 1, name: '春季首播',   date: '2025/05/13', products: [], sources: [] },
   { id: 2, name: '母親節特賣', date: '2025/05/10', products: [], sources: [] },
 ])
-const currentSession = ref<LiveSession | null>(sessions.value[0])
+const currentSession = ref<LiveSession | null>(null)
 
 function onSessionSelect(s: LiveSession): void { currentSession.value = s }
 
@@ -407,6 +472,18 @@ function onQuickAddProducts(payloads: QuickAddProductPayload[]): void {
       status: 'ready',
       specs: [],
     })
+    // 同步寫進「選擇商品」picker 的目錄；名稱重複就不重複加（避免 duplicate id 進去）
+    if (!isCatalogDuplicate(p.name)) {
+      addToCatalog({
+        id: p.id,
+        name: p.name,
+        sku: p.keyword || `QA-${p.id}`,
+        category: '快速新增',
+        price: p.price,
+        stock: p.stock,
+        status: '上架中',
+      })
+    }
   })
   toast.removeAllGroups()
   toast.add({

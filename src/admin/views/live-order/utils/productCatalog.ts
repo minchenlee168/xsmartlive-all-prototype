@@ -3,7 +3,12 @@
  *
  * 抽成共用模組讓 AddProductDialog 與「快速新增」共用同一份來源，
  * 以便快速新增時能比對是否與目錄內既有商品重複。
+ *
+ * `productCatalog` 是 reactive：快速新增送出時透過 `addToCatalog` 把新商品 push 進來，
+ * AddProductDialog 重新打開時會看到對應條目。
  */
+import { reactive } from 'vue'
+
 export interface CatalogProduct {
   id: number
   name: string
@@ -14,7 +19,7 @@ export interface CatalogProduct {
   status: string
 }
 
-export const productCatalog: CatalogProduct[] = [
+export const productCatalog: CatalogProduct[] = reactive([
   { id: 1,  name: 'iPhone 15 Pro 保護殼',    sku: 'ACC-IP15P-001', category: '配件',     price: 490,   stock: 85,  status: '上架中' },
   { id: 2,  name: 'Sony WH-1000XM5 耳機',    sku: 'AUD-SONY-005',  category: '耳機',     price: 9900,  stock: 12,  status: '上架中' },
   { id: 3,  name: 'Nintendo Switch 主機',    sku: 'GAM-NSW-001',   category: '電玩周邊', price: 9800,  stock: 6,   status: '上架中' },
@@ -26,7 +31,7 @@ export const productCatalog: CatalogProduct[] = [
   { id: 9,  name: 'iPad Pro M2 螢幕保護貼',  sku: 'ACC-IPD-007',   category: '配件',     price: 350,   stock: 200, status: '上架中' },
   { id: 10, name: 'ASUS ROG 電競滑鼠',       sku: 'GAM-ROG-008',   category: '電玩周邊', price: 1890,  stock: 10,  status: '已下架' },
   { id: 11, name: '經典素色棉質 T 恤',        sku: 'CLO-TS-001',    category: '服飾',     price: 490,   stock: 138, status: '上架中' },
-]
+])
 
 /** 正規化名稱供比對：去頭尾空白、轉小寫。 */
 function normalizeName(name: string): string {
@@ -38,4 +43,9 @@ export function isCatalogDuplicate(name: string): boolean {
   const target = normalizeName(name)
   if (!target) return false
   return productCatalog.some((p) => normalizeName(p.name) === target)
+}
+
+/** 快速新增送出時呼叫：把新商品 push 到 reactive catalog；AddProductDialog 下次打開可看到。 */
+export function addToCatalog(p: CatalogProduct): void {
+  productCatalog.push(p)
 }
