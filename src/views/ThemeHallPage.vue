@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import NavBar from '../components/NavBar.vue'
 import CategoryTabs from '../components/CategoryTabs.vue'
@@ -23,20 +23,38 @@ const gridCols = computed(() => ({
   'grid-cols-5': vp.value === 'pc',
 }))
 
-// 主題館的完整商品清單 — 原型用既有資料重複堆疊出較長的列表，方便展示分頁
+// 主題館的完整商品清單 — 原型用既有資料重複堆疊出較長的列表
 const feed = Array.from({ length: 5 }, (_, page) =>
   products.map((p) => ({ ...p, key: `${p.id}-${page}` })),
 ).flat()
 
-// 分頁：一頁 10 個，超過顯示分頁器
+/**
+ * 動態載入：初始 PAGE_SIZE 筆，使用者捲到接近底部時自動補一頁。
+ * sentinel ref 用 IntersectionObserver 監聽，進入視窗即觸發 loadMore。
+ */
 const PAGE_SIZE = 10
-const first = ref(0)
-const pagedProducts = computed(() => feed.slice(first.value, first.value + PAGE_SIZE))
+const visibleCount = ref(PAGE_SIZE)
+const visibleProducts = computed(() => feed.slice(0, visibleCount.value))
+const hasMore = computed(() => visibleCount.value < feed.length)
 
-function onPage(e: { first: number }) {
-  first.value = e.first
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+const sentinelRef = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
+
+function loadMore(): void {
+  if (!hasMore.value) return
+  visibleCount.value = Math.min(visibleCount.value + PAGE_SIZE, feed.length)
 }
+
+onMounted(() => {
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting) loadMore()
+    },
+    { rootMargin: '300px' },
+  )
+  if (sentinelRef.value) observer.observe(sentinelRef.value)
+})
+onBeforeUnmount(() => observer?.disconnect())
 </script>
 
 <template>
@@ -69,7 +87,7 @@ function onPage(e: { first: number }) {
         <div class="flex flex-col gap-4">
           <div class="grid" :class="[gridCols, vp === 'mobile' ? 'gap-2' : 'gap-4']">
             <ProductCard
-              v-for="p in pagedProducts"
+              v-for="p in visibleProducts"
               :key="p.key"
               :id="p.id"
               :name="p.name"
@@ -82,14 +100,18 @@ function onPage(e: { first: number }) {
             />
           </div>
 
-          <!-- 分頁器：商品超過一頁 10 個時顯示 -->
-          <Paginator
-            v-if="feed.length > PAGE_SIZE"
-            :first="first"
-            :rows="PAGE_SIZE"
-            :total-records="feed.length"
-            @page="onPage"
-          />
+          <!-- 動態載入 sentinel：進視窗就 load 下一頁；全部載完顯示 footer 提示 -->
+          <div v-if="hasMore" ref="sentinelRef" class="py-6 flex flex-col items-center gap-2 text-sm text-[#64748b]">
+            <ProgressSpinner
+              style="width: 36px; height: 36px"
+              stroke-width="4"
+              animation-duration=".8s"
+            />
+            <span>載入更多商品…</span>
+          </div>
+          <div v-else class="py-6 text-center text-sm text-[#94a3b8]">
+            — 已顯示全部商品 —
+          </div>
         </div>
 
       </div>

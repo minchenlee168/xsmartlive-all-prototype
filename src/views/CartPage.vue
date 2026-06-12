@@ -4,9 +4,11 @@ import { useRouter } from 'vue-router'
 import NavBar from '../components/NavBar.vue'
 import CategoryTabs from '../components/CategoryTabs.vue'
 import { useViewportStore } from '../stores/viewport'
-import { useCartStore, type CartGroup } from '../stores/cart'
+import { useCartStore, type CartGroup, type CartItem, type CartBundleItem } from '../stores/cart'
+import { useUiStore } from '../stores/ui'
 
 const router = useRouter()
+const ui = useUiStore()
 const vp = computed(() => useViewportStore().current.id)
 const isPC = computed(() => vp.value === 'pc')
 
@@ -50,7 +52,55 @@ function removeItem(group: CartGroup, id: string) {
 function isGroupLocked(group: CartGroup) {
   return group.tags.some(t => t.label === '禁止棄標')
 }
+/** 組合商品子品是否缺規格或數量；用於顯示提示與阻擋結帳。 */
+function subNeedsAttention(sub: CartBundleItem): boolean {
+  return !sub.spec || sub.qty <= 0
+}
+function bundleNeedsAttention(item: CartItem): boolean {
+  if (!item.isBundle || !item.bundleItems) return false
+  return item.bundleItems.some(subNeedsAttention)
+}
+function subMissingText(sub: CartBundleItem): string {
+  const missing: string[] = []
+  if (!sub.spec) missing.push('規格')
+  if (sub.qty <= 0) missing.push('數量')
+  return missing.length ? `請選擇${missing.join('與')}` : ''
+}
+// ── 加價購：商城分類頁沒有、僅在購物車推薦的加價商品 ──
+interface AddOnProduct {
+  id: number
+  name: string
+  price: number
+  original?: number
+  image: string
+  spec?: string
+}
+const addOnProducts: AddOnProduct[] = [
+  { id: 9001, name: '寶寶嬰兒紗布手帕 5 入組', price: 89, original: 150, image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=400&fit=crop' },
+  { id: 9002, name: '寶寶柔嫩濕紙巾 80 抽 / 包', price: 49, original: 80, image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&fit=crop' },
+  { id: 9003, name: '不鏽鋼防滑安撫奶嘴',         price: 129, original: 200, image: 'https://images.unsplash.com/photo-1517242810446-cc8951b2be40?w=400&fit=crop' },
+  { id: 9004, name: '嬰兒安全電動指甲剪',         price: 199, original: 320, image: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=400&fit=crop' },
+  { id: 9005, name: '寶寶副食品試吃綜合包',       price: 99,  original: 180, image: 'https://images.unsplash.com/photo-1543007630-9710e4a00a20?w=400&fit=crop' },
+  { id: 9006, name: '媽咪保溫水壺 500ml',         price: 290, original: 480, image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&fit=crop' },
+]
+function addAddOn(p: AddOnProduct): void {
+  cart.addItem(
+    { id: p.id, name: p.name, price: p.price, original: p.original, image: p.image },
+    p.spec ?? '預設',
+    1,
+  )
+  ui.toast(`已加入「${p.name}」`)
+}
+
 function goCheckout() {
+  // 已勾選的組合商品若有未選規格 / 數量 → 阻擋並提示
+  const incompleteBundle = groups.value
+    .flatMap(g => g.items)
+    .find(i => i.checked && bundleNeedsAttention(i))
+  if (incompleteBundle) {
+    ui.toast(`「${incompleteBundle.name}」尚未選擇規格或數量`)
+    return
+  }
   // 勾選的群組若包含不同配送方式 → 不能合併結帳，跳提示請拆單
   const checkedGroups = groups.value.filter(g => g.items.some(i => i.checked))
   const methods = Array.from(new Set(
@@ -138,11 +188,7 @@ function goProduct(productId?: number) {
             <!-- Image -->
             <div
               class="shrink-0 rounded-[4px] overflow-hidden aspect-square"
-              :class="[
-                isPC ? 'w-[100px]' : vp === 'tablet' ? 'w-[80px]' : 'w-[64px]',
-                item.productId != null ? 'cursor-pointer' : '',
-              ]"
-              @click="goProduct(item.productId)"
+              :class="isPC ? 'w-[100px]' : vp === 'tablet' ? 'w-[80px]' : 'w-[64px]'"
             >
               <img v-if="item.image" :src="item.image" :alt="item.name" class="w-full h-full object-cover" />
               <div v-else class="w-full h-full bg-gray-100 flex flex-col items-center justify-center gap-0.5">
@@ -210,22 +256,35 @@ function goProduct(productId?: number) {
                 <i class="pi text-xs" :class="item.bundleExpanded ? 'pi-minus' : 'pi-plus'" />
                 組合商品內容
               </button>
+              <!-- 未選規格 / 數量提示 banner -->
+              <div
+                v-if="item.bundleExpanded && bundleNeedsAttention(item)"
+                class="flex items-center gap-2 mb-3 px-3 py-2 rounded-md text-sm"
+                style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca"
+              >
+                <i class="pi pi-exclamation-triangle text-base" />
+                <span>此組合商品尚未選擇規格或數量，請至商品頁完成選擇後再結帳</span>
+              </div>
               <!-- Sub-items grid -->
               <div v-if="item.bundleExpanded" class="grid gap-4" :class="isPC ? 'grid-cols-2' : 'grid-cols-1'">
                 <div
                   v-for="(sub, si) in item.bundleItems"
                   :key="si"
                   class="bg-[#f1f5f9] rounded-xl p-[var(--card-pad)] flex items-center gap-4 shadow-[0px_1px_2px_rgba(0,0,0,0.1)]"
+                  :style="subNeedsAttention(sub) ? 'outline: 1px solid #ef4444' : ''"
                 >
                   <div class="w-[80px] h-[80px] shrink-0 bg-[#d9d9d9] rounded overflow-hidden">
                     <img v-if="sub.image" :src="sub.image" :alt="sub.name" class="w-full h-full object-cover" />
                   </div>
                   <div class="flex flex-col gap-1 min-w-0 flex-1">
                     <p class="font-semibold text-[16px] text-[#334155] truncate">{{ sub.name }}</p>
+                    <p v-if="subNeedsAttention(sub)" class="text-[13px] font-medium" style="color: #ef4444">
+                      {{ subMissingText(sub) }}
+                    </p>
                     <div v-if="sub.spec && sub.spec !== '預設'" class="flex gap-4 text-[14px] text-[#334155]">
                       <span>規格</span><span>{{ sub.spec }}</span>
                     </div>
-                    <div class="flex gap-4 text-[14px] text-[#334155]">
+                    <div v-if="sub.qty > 0" class="flex gap-4 text-[14px] text-[#334155]">
                       <span>數量</span><span>{{ sub.qty * item.qty }}</span>
                     </div>
                   </div>
@@ -241,6 +300,44 @@ function goProduct(productId?: number) {
           <span class="font-bold" style="color: var(--primary)" :class="vp === 'mobile' ? 'text-[20px]' : 'text-[30px]'">${{ groupSubtotal(group).toLocaleString() }}</span>
         </div>
       </div>
+
+      <!-- 加價購區塊：商城分類頁沒有的小物、可一鍵加入購物車 -->
+      <section class="bg-white rounded-[12px] shadow-card">
+        <div
+          class="flex items-center px-4 py-2 border-b-2"
+          style="background: color-mix(in srgb, var(--primary) 8%, transparent); border-color: var(--primary); border-radius: 12px 12px 0 0"
+        >
+          <span class="text-[18px] font-semibold text-[#334155]">加價購</span>
+        </div>
+
+        <!-- 加價購卡片 — 樣式對齊組合商品內容（aspect-[332/320] 圖、無邊框、p-2 卡） -->
+        <div class="flex flex-wrap gap-2 p-[var(--card-pad)]">
+          <div
+            v-for="p in addOnProducts"
+            :key="p.id"
+            class="flex flex-col gap-[7px] p-2 rounded-[8px]"
+            :class="[
+              vp === 'pc'
+                ? 'w-[243px] h-[380px]'
+                : vp === 'tablet'
+                  ? 'w-[calc((100%-32px)/5)] h-[260px]'
+                  : 'w-[calc((100%-8px)/2)] h-[290px]',
+            ]"
+          >
+            <div class="aspect-[332/320] w-full bg-[#d9d9d9] rounded-[8px] overflow-hidden shrink-0">
+              <img :src="p.image" :alt="p.name" class="w-full h-full object-cover" loading="lazy" />
+            </div>
+            <div class="flex flex-col gap-2 p-2 flex-1 min-h-0">
+              <p
+                class="text-[#020617] leading-snug line-clamp-2 overflow-hidden"
+                :class="isPC ? 'text-[16px] h-[44px]' : 'text-sm h-[36px]'"
+              >{{ p.name }}</p>
+              <span class="font-bold" :class="isPC ? 'text-[18px]' : 'text-base'" style="color: var(--primary)">${{ p.price }}</span>
+              <Button label="加入購物車" icon="pi pi-plus" size="small" class="mt-auto" @click="addAddOn(p)" />
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
 
     <!-- Sticky footer -->
@@ -336,4 +433,13 @@ function goProduct(productId?: number) {
 }
 .cart-divider::after { bottom: 0; }
 .cart-divider-top::before { top: 0; }
+
+/* 加價購手機橫向卷軸：隱藏 scrollbar */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 </style>

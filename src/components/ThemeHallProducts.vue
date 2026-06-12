@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch, onBeforeUnmount } from 'vue'
 import ProductCard from './ProductCard.vue'
 import { useViewportStore } from '../stores/viewport'
 import { products } from '../data/products'
@@ -18,12 +18,51 @@ const items = products.slice(0, 10)
 
 // 手機改用 horizontal scroll（隱藏左右切換鈕），平板 / PC 維持 Carousel。
 const isMobile = computed(() => vp.value === 'mobile')
+
+// ── 手機版自動輪播：autoplay 為 true 時定時 scrollBy 一張卡寬，到底回頭 ──
+const scrollerRef = ref<HTMLElement | null>(null)
+let autoplayTimer: ReturnType<typeof setInterval> | null = null
+
+function stopAutoplay(): void {
+  if (autoplayTimer) {
+    clearInterval(autoplayTimer)
+    autoplayTimer = null
+  }
+}
+
+function startAutoplay(): void {
+  stopAutoplay()
+  autoplayTimer = setInterval(() => {
+    const el = scrollerRef.value
+    if (!el) return
+    // 卡寬：45% × scroller width + gap-3 (12px)
+    const step = el.clientWidth * 0.45 + 12
+    // 接近底部 → 平滑回到 0
+    if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 8) {
+      el.scrollTo({ left: 0, behavior: 'smooth' })
+    } else {
+      el.scrollBy({ left: step, behavior: 'smooth' })
+    }
+  }, 3000)
+}
+
+watch(
+  () => [isMobile.value, props.autoplay] as const,
+  ([mob, auto]) => {
+    if (mob && auto) startAutoplay()
+    else stopAutoplay()
+  },
+  { immediate: true },
+)
+
+onBeforeUnmount(stopAutoplay)
 </script>
 
 <template>
-  <!-- 手機：橫向卷軸滑動，每卡 45% 寬，snap 對齊 -->
+  <!-- 手機：橫向卷軸滑動，每卡 45% 寬，snap 對齊；autoplay 時定時 scrollBy 一張卡寬 -->
   <div
     v-if="isMobile"
+    ref="scrollerRef"
     class="flex overflow-x-auto gap-3 px-1 pb-2 snap-x snap-mandatory hide-scrollbar"
   >
     <div

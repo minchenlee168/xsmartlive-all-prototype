@@ -29,6 +29,34 @@ const bundleSelections = ref<string[]>(
   product.value.bundleItems?.map(i => i.spec) ?? [],
 )
 
+/** 任選組合：每個 option 已挑選的數量 + 對應規格。預設 maxQty=1。 */
+const pickedQty = ref<Record<number, number>>({})
+const pickedSpecs = ref<Record<number, string>>({})
+const pickedTotal = computed(() =>
+  Object.values(pickedQty.value).reduce((s, n) => s + (n || 0), 0),
+)
+const isPickFull = computed(() =>
+  product.value.isPickBundle && pickedTotal.value === (product.value.pickCount ?? 0),
+)
+function optMaxQty(opt: { maxQty?: number }): number {
+  return opt.maxQty ?? 1
+}
+/** 此選項可選的數量清單：0 ~ min(maxQty, 目前已選 + 剩餘額度)。 */
+function qtyOptionsFor(opt: { id: number; maxQty?: number }): number[] {
+  const remaining = (product.value.pickCount ?? 0) - pickedTotal.value
+  const cur = pickedQty.value[opt.id] ?? 0
+  const max = Math.min(optMaxQty(opt), cur + Math.max(remaining, 0))
+  return Array.from({ length: max + 1 }, (_, i) => i)
+}
+function setPickQty(opt: { id: number; spec: string }, qty: number): void {
+  pickedQty.value = { ...pickedQty.value, [opt.id]: qty }
+  if (qty === 0) {
+    delete pickedSpecs.value[opt.id]
+  } else if (!pickedSpecs.value[opt.id]) {
+    pickedSpecs.value[opt.id] = opt.spec
+  }
+}
+
 /** 商品詳情 mock：規格表 + 介紹段落（讓所有商品都有相同詳情區塊）。 */
 const detailSpecs = computed(() => [
   { label: '商品編號', value: `P-${String(product.value.id).padStart(5, '0')}` },
@@ -56,14 +84,39 @@ function goLoginForCoupons() {
 }
 
 function addToCart() {
-  // 組合商品：把子品的選用規格合併成 spec 文字加進購物車
-  const specLabel = product.value.isBundle && bundleSelections.value.length > 0
-    ? bundleSelections.value.join(' / ')
-    : (selectedSize.value || '預設')
+  // 任選組合：尚未選滿，提醒不加入
+  if (product.value.isPickBundle) {
+    const need = product.value.pickCount ?? 0
+    if (pickedTotal.value !== need) {
+      ui.toast(`請選擇 ${need} 件商品`)
+      return
+    }
+  }
+  let specLabel = selectedSize.value || '預設'
+  let customBundle: { name: string; image?: string; spec: string; qty: number }[] | undefined
+  if (product.value.isPickBundle) {
+    const picked = Object.entries(pickedQty.value)
+      .filter(([, n]) => (n ?? 0) > 0)
+      .map(([id, n]) => {
+        const opt = product.value.pickOptions?.find(o => o.id === Number(id))
+        const spec = pickedSpecs.value[Number(id)] ?? opt?.spec ?? '預設'
+        return { id: Number(id), opt, spec, qty: n as number }
+      })
+    specLabel = picked.map(p => `${p.opt?.name ?? ''}（${p.spec}）× ${p.qty}`).join(' / ')
+    customBundle = picked.map(p => ({
+      name: p.opt?.name ?? '',
+      image: p.opt?.image,
+      spec: p.spec,
+      qty: p.qty,
+    }))
+  } else if (product.value.isBundle && bundleSelections.value.length > 0) {
+    specLabel = bundleSelections.value.join(' / ')
+  }
   cart.addItem(
     { id: product.value.id, name: product.value.name, price: product.value.price, original: product.value.original, image: product.value.image },
     specLabel,
     qty.value,
+    customBundle,
   )
   ui.toast('已加入購物車')
 }
@@ -254,8 +307,79 @@ function shareTo(platform: 'facebook' | 'line' | 'instagram' | 'link') {
             </div>
           </div>
 
-          <!-- Bundle items section -->
-          <div v-if="product.isBundle && product.bundleItems?.length" class="flex flex-col gap-4">
+          <!-- 任選組合 section：從 pickOptions 挑 pickCount 件 -->
+          <div v-if="product.isPickBundle && product.pickOptions?.length" class="flex flex-col gap-4">
+            <div
+              class="flex items-center justify-between px-4 py-2 rounded-t-[4px] border-b-2"
+              style="background: color-mix(in srgb, var(--primary) 8%, transparent); border-color: var(--primary)"
+            >
+              <span class="text-[18px] font-semibold text-[#334155]">
+                商品組合（請選擇 {{ product.pickCount }} 件商品）
+              </span>
+              <span class="text-sm font-medium" style="color: var(--primary)">
+                已選 {{ pickedTotal }} / {{ product.pickCount }}
+              </span>
+            </div>
+
+            <div class="flex flex-wrap gap-4">
+              <div
+                v-for="opt in product.pickOptions"
+                :key="opt.id"
+                class="flex flex-col gap-[7px] p-2 rounded-[8px] border-2 transition relative overflow-hidden"
+                :class="[
+                  isPC ? 'w-[243px] h-[440px]' : 'w-[160px] h-[360px]',
+                  (pickedQty[opt.id] ?? 0) > 0
+                    ? 'border-[color:var(--primary)] bg-[color:color-mix(in_srgb,var(--primary)_6%,transparent)]'
+                    : 'border-[#e2e8f0]',
+                ]"
+              >
+                <div class="aspect-[332/320] w-full bg-[#d9d9d9] rounded-[8px] overflow-hidden shrink-0">
+                  <img v-if="opt.image" :src="opt.image" :alt="opt.name" class="w-full h-full object-cover" />
+                </div>
+
+                <div class="flex flex-col gap-2 p-2 flex-1 min-h-0">
+                  <!-- 上：商品名與限購提示 -->
+                  <div class="flex flex-col gap-1">
+                    <p
+                      class="text-[#020617] leading-snug line-clamp-2 overflow-hidden"
+                      :class="isPC ? 'text-[16px] h-[44px]' : 'text-sm h-[40px]'"
+                    >{{ opt.name }}</p>
+                    <p
+                      v-if="opt.maxQty != null && opt.maxQty < (product.pickCount ?? 0)"
+                      class="text-xs font-medium"
+                      style="color: #ef4444"
+                    >限購 {{ opt.maxQty }} 個</p>
+                  </div>
+                  <!-- 下：規格 + 數量（永遠靠卡片底部） -->
+                  <div class="mt-auto flex flex-col gap-2">
+                    <div v-if="opt.specOptions?.length" class="flex items-center gap-2 text-sm text-[#334155]">
+                      <span class="shrink-0 text-[#64748b]">規格</span>
+                      <Select
+                        :model-value="pickedSpecs[opt.id] ?? opt.spec"
+                        :options="opt.specOptions"
+                        size="small"
+                        class="flex-1"
+                        @update:model-value="(v) => (pickedSpecs[opt.id] = v)"
+                      />
+                    </div>
+                    <div class="flex items-center gap-2 text-sm text-[#334155]">
+                      <span class="shrink-0 text-[#64748b]">數量</span>
+                      <Select
+                        :model-value="pickedQty[opt.id] ?? 0"
+                        :options="qtyOptionsFor(opt)"
+                        size="small"
+                        class="flex-1"
+                        @update:model-value="(v) => setPickQty(opt, v)"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 既有 Bundle items section -->
+          <div v-else-if="product.isBundle && product.bundleItems?.length" class="flex flex-col gap-4">
             <!-- Section header -->
             <div
               class="flex items-center px-4 py-2 rounded-t-[4px] border-b-2"

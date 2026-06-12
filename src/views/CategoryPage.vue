@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import NavBar from '../components/NavBar.vue'
 import CategoryTabs from '../components/CategoryTabs.vue'
@@ -35,7 +35,42 @@ const gridCols = computed(() =>
   vp.value === 'pc' ? 'grid-cols-4' : vp.value === 'tablet' ? 'grid-cols-3' : 'grid-cols-2',
 )
 
-const pageProducts = products
+// 完整商品 feed — 原型用既有資料堆出較長列表方便展示動態載入
+const feed = Array.from({ length: 5 }, (_, page) =>
+  products.map((p) => ({ ...p, key: `${p.id}-${page}` })),
+).flat()
+
+/**
+ * 動態載入：初始 PAGE_SIZE 筆，sentinel 進視窗時補一頁。
+ * 切換大分類 / 子分類時 visibleCount 重置回初始。
+ */
+const PAGE_SIZE = 12
+const visibleCount = ref(PAGE_SIZE)
+const visibleProducts = computed(() => feed.slice(0, visibleCount.value))
+const hasMore = computed(() => visibleCount.value < feed.length)
+
+watch([() => route.params.tab, activeSubCategory], () => {
+  visibleCount.value = PAGE_SIZE
+})
+
+const sentinelRef = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
+
+function loadMore(): void {
+  if (!hasMore.value) return
+  visibleCount.value = Math.min(visibleCount.value + PAGE_SIZE, feed.length)
+}
+
+onMounted(() => {
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting) loadMore()
+    },
+    { rootMargin: '300px' },
+  )
+  if (sentinelRef.value) observer.observe(sentinelRef.value)
+})
+onBeforeUnmount(() => observer?.disconnect())
 </script>
 
 <template>
@@ -87,11 +122,11 @@ const pageProducts = products
           </div>
 
           <!-- Product grid -->
-          <div class="flex-1 min-w-0">
+          <div class="flex-1 min-w-0 flex flex-col gap-4">
             <div class="grid" :class="[gridCols, vp === 'mobile' ? 'gap-2' : 'gap-4']">
               <ProductCard
-                v-for="product in pageProducts"
-                :key="product.id"
+                v-for="product in visibleProducts"
+                :key="product.key"
                 :id="product.id"
                 :name="product.name"
                 :price="product.price"
@@ -100,6 +135,19 @@ const pageProducts = products
                 :stock="product.stock"
                 :image="product.image"
               />
+            </div>
+
+            <!-- 動態載入 sentinel -->
+            <div v-if="hasMore" ref="sentinelRef" class="py-6 flex flex-col items-center gap-2 text-sm text-[#64748b]">
+              <ProgressSpinner
+                style="width: 36px; height: 36px"
+                stroke-width="4"
+                animation-duration=".8s"
+              />
+              <span>載入更多商品…</span>
+            </div>
+            <div v-else class="py-6 text-center text-sm text-[#94a3b8]">
+              — 已顯示全部商品 —
             </div>
           </div>
         </div>

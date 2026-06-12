@@ -385,11 +385,14 @@ const totalSaved = computed(() =>
                 :class="item.productId != null ? 'cursor-pointer hover:text-[color:var(--primary)] transition-colors' : ''"
                 @click="goProduct(item.productId)"
               >{{ item.name }}</p>
-              <template v-for="(s, si) in item.spec" :key="si">
-                <div v-if="s && s !== '預設'" class="flex gap-4 text-[14px] text-[#334155]">
-                  <span class="shrink-0">規格</span>
-                  <span class="truncate">{{ s }}</span>
-                </div>
+              <!-- 規格列：組合商品的規格寫在底下子品，這裡不重複顯示 -->
+              <template v-if="!item.bundleItems">
+                <template v-for="(s, si) in item.spec" :key="si">
+                  <div v-if="s && s !== '預設'" class="flex gap-4 text-[14px] text-[#334155]">
+                    <span class="shrink-0">規格</span>
+                    <span class="truncate">{{ s }}</span>
+                  </div>
+                </template>
               </template>
               <div class="flex gap-4 text-[14px] text-[#334155]">
                 <span>數量</span><span>{{ item.qty }}</span>
@@ -420,7 +423,7 @@ const totalSaved = computed(() =>
           <!-- Bundle（不可收合，直接列出；左緣對齊「數量」label） -->
           <div v-if="item.bundleItems" class="pl-[88px] pr-4 pb-4">
             <p class="text-[14px] text-[#334155] leading-relaxed">
-              <span class="font-medium">組合商品內容：</span>{{ item.bundleItems.map(s => `${s.name} ×${s.qty * item.qty}`).join('、') }}
+              <span class="font-medium">組合商品內容：</span>{{ item.bundleItems.map(s => `${s.name}${s.spec && s.spec !== '預設' ? ` - ${s.spec}` : ''} ×${s.qty * item.qty}`).join('、') }}
             </p>
           </div>
         </div>
@@ -459,11 +462,12 @@ const totalSaved = computed(() =>
               <Button label="使用" severity="secondary" outlined @click="applyCouponCode" />
             </InputGroup>
             <Button
-              :label="isMobile ? '掃描' : '掃描 QR'"
+              v-if="isMobile"
+              label="掃描"
               icon="pi pi-qrcode"
               severity="secondary"
               outlined
-              :class="isMobile ? 'shrink-0' : ''"
+              class="shrink-0"
               @click="openCouponScanner"
             />
           </div>
@@ -574,25 +578,44 @@ const totalSaved = computed(() =>
           <span class="text-[#334155]">多件優惠折抵</span>
           <span class="text-right" style="color: #ef4444">- $ {{ Math.abs(multiItemDiscount).toLocaleString() }}</span>
 
-          <!-- 符合『滿千免運』提示 → 自成一列、置於運費折抵上方 -->
-          <div class="col-span-3 flex justify-end items-center gap-1 text-[13px]" style="color: var(--primary)">
-            <i class="pi pi-truck text-[12px]" />
-            符合『滿千免運』
-          </div>
-          <!-- 運費折抵 -->
-          <div></div>
-          <span class="text-[#334155]">運費折抵</span>
-          <span class="text-right" style="color: #ef4444">- $ {{ Math.abs(shippingDiscount).toLocaleString() }}</span>
-
-          <!-- 已套用優惠券提示 → 自成一列、置於優惠券折扣上方 -->
-          <template v-if="appliedCoupon">
+          <!-- 符合『滿千免運』提示：手機獨佔一列在運費折抵上方；其他與運費折抵同一列 -->
+          <template v-if="isMobile">
             <div class="col-span-3 flex justify-end items-center gap-1 text-[13px]" style="color: var(--primary)">
-              <i class="pi pi-ticket text-[12px]" />
-              已套用『{{ appliedCoupon.title }}』
+              <i class="pi pi-truck text-[12px]" />
+              符合『滿千免運』
             </div>
             <div></div>
-            <span class="text-[#334155]">優惠券折扣</span>
-            <span class="text-right" style="color: #ef4444">- $ {{ Math.abs(couponDiscount).toLocaleString() }}</span>
+            <span class="text-[#334155]">運費折抵</span>
+            <span class="text-right" style="color: #ef4444">- $ {{ Math.abs(shippingDiscount).toLocaleString() }}</span>
+          </template>
+          <template v-else>
+            <span class="justify-self-end flex items-center gap-1 text-[13px]" style="color: var(--primary)">
+              <i class="pi pi-truck text-[12px]" />
+              符合『滿千免運』
+            </span>
+            <span class="text-[#334155]">運費折抵</span>
+            <span class="text-right" style="color: #ef4444">- $ {{ Math.abs(shippingDiscount).toLocaleString() }}</span>
+          </template>
+
+          <!-- 已套用優惠券提示：手機獨佔一列在優惠券折扣上方；其他與折扣同一列 -->
+          <template v-if="appliedCoupon">
+            <template v-if="isMobile">
+              <div class="col-span-3 flex justify-end items-center gap-1 text-[13px]" style="color: var(--primary)">
+                <i class="pi pi-ticket text-[12px]" />
+                已套用『{{ appliedCoupon.title }}』
+              </div>
+              <div></div>
+              <span class="text-[#334155]">優惠券折扣</span>
+              <span class="text-right" style="color: #ef4444">- $ {{ Math.abs(couponDiscount).toLocaleString() }}</span>
+            </template>
+            <template v-else>
+              <span class="justify-self-end flex items-center gap-1 text-[13px]" style="color: var(--primary)">
+                <i class="pi pi-ticket text-[12px]" />
+                已套用『{{ appliedCoupon.title }}』
+              </span>
+              <span class="text-[#334155]">優惠券折扣</span>
+              <span class="text-right" style="color: #ef4444">- $ {{ Math.abs(couponDiscount).toLocaleString() }}</span>
+            </template>
           </template>
 
           <!-- 紅利點數 -->

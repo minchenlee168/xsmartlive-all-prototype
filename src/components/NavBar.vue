@@ -311,15 +311,6 @@ function pickKeyword(kw: string) {
                   </span>
                 </button>
                 <button
-                  class="w-full flex items-center h-[50px] px-3 border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
-                  @click="goMember"
-                >
-                  <span class="flex-1 flex items-center gap-2 pl-[14px]">
-                    <i class="pi pi-file text-sm text-[#334155]" />
-                    <span class="font-medium text-[16px] text-[#334155]">歷史訂單</span>
-                  </span>
-                </button>
-                <button
                   class="w-full flex items-center h-[50px] px-3 hover:bg-gray-50 transition-colors text-left"
                   @click="onLogout"
                 >
@@ -415,15 +406,6 @@ function pickKeyword(kw: string) {
                       <span class="font-medium text-[14px]" style="color: var(--primary)">{{ auth.couponCount }}</span>
                       <span class="text-[16px] text-[#334155]">/張</span>
                     </span>
-                  </span>
-                </button>
-                <button
-                  class="w-full flex items-center h-[50px] px-3 border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
-                  @click="goMember"
-                >
-                  <span class="flex-1 flex items-center gap-2 pl-[14px]">
-                    <i class="pi pi-file text-sm text-[#334155]" />
-                    <span class="font-medium text-[16px] text-[#334155]">歷史訂單</span>
                   </span>
                 </button>
                 <button
