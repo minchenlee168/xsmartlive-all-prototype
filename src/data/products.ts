@@ -1,8 +1,11 @@
 export interface BundleItem {
   name: string
   image?: string
+  /** 預設選用的規格（顯示用）；可由 specOptions 切換 */
   spec: string
   qty: number
+  /** 此子品可選的規格清單；商品內頁顯示為下拉，user 可挑一個 */
+  specOptions?: string[]
 }
 
 export interface Product {
@@ -43,8 +46,20 @@ export const products: Product[] = [
     isBundle: true,
     noCoupon: true,
     bundleItems: [
-      { name: '新款 包屁衣韓版小洋裝 秋冬刺繡款', image: 'https://images.unsplash.com/photo-1596870230751-ebdfce98ec42?w=400&fit=crop', spec: '黑-S', qty: 1 },
-      { name: '新款 包屁衣韓版小洋裝 秋冬刺繡款', image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=400&fit=crop', spec: '白-S', qty: 1 },
+      {
+        name: '新款 包屁衣韓版小洋裝 秋冬刺繡款',
+        image: 'https://images.unsplash.com/photo-1596870230751-ebdfce98ec42?w=400&fit=crop',
+        spec: '黑-S',
+        qty: 1,
+        specOptions: ['黑-S', '黑-M', '黑-L', '白-S', '白-M', '白-L'],
+      },
+      {
+        name: '新款 包屁衣韓版小洋裝 秋冬刺繡款',
+        image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=400&fit=crop',
+        spec: '白-S',
+        qty: 1,
+        specOptions: ['黑-S', '黑-M', '黑-L', '白-S', '白-M', '白-L'],
+      },
     ],
   },
 ]

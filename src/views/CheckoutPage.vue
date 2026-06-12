@@ -178,6 +178,15 @@ function applyCouponCode() {
   ui.toast('已套用選擇的優惠券')
 }
 
+// QR 掃描優惠券：mock 用一個小 dialog 模擬相機畫面，按「已掃描」自動填入優惠代碼
+const couponScannerOpen = ref(false)
+function openCouponScanner(): void { couponScannerOpen.value = true }
+function fakeScanResult(): void {
+  couponCode.value = `QR${Math.floor(100000 + Math.random() * 900000)}`
+  couponScannerOpen.value = false
+  applyCouponCode()
+}
+
 // --- Shipping drawer ---
 interface HomeAddress { id: string; name: string; phone: string; address: string; isDefault: boolean; unavailable?: boolean }
 interface StoreAddress { id: string; name: string; phone: string; chain: '7-11' | 'FamilyMart'; storeName: string; address: string; isDefault: boolean }
@@ -423,23 +432,41 @@ const totalSaved = computed(() =>
       </section>
 
       <!-- Coupon -->
-      <section class="bg-white rounded-[12px] shadow-card card-pad flex items-center justify-between gap-4 flex-wrap">
+      <section
+        class="bg-white rounded-[12px] shadow-card card-pad gap-4"
+        :class="isMobile ? 'flex flex-col' : 'flex items-center justify-between flex-wrap'"
+      >
         <span class="font-medium text-[#334155]">優惠券</span>
-        <div class="flex items-center gap-3 flex-wrap">
+        <div
+          class="gap-3"
+          :class="isMobile ? 'flex flex-col w-full' : 'flex items-center flex-wrap'"
+        >
           <span v-if="appliedCoupon" class="flex items-center gap-1.5 text-sm" style="color: #16a34a">
             <i class="pi pi-check-circle" />
             已套用『{{ appliedCoupon.title }}』
             <span v-if="!manualCouponId" class="text-[12px] text-[#94a3b8]">（已自動套用最優惠）</span>
           </span>
-          <Button label="選擇可使用優惠券" @click="openCouponDrawer" />
-          <InputGroup class="w-[260px]">
-            <InputText
-              v-model="couponCode"
-              placeholder="輸入優惠券優惠代碼"
-              @keyup.enter="applyCouponCode"
+          <!-- 第一行：選擇可使用優惠券（手機獨佔一列） -->
+          <Button label="選擇可使用優惠券" :class="isMobile ? '!w-full' : ''" @click="openCouponDrawer" />
+          <!-- 第二行（手機版）：輸入 + 掃描 QR 同列 -->
+          <div :class="isMobile ? 'flex items-center gap-2 w-full' : 'flex items-center gap-3 flex-wrap'">
+            <InputGroup :class="isMobile ? 'flex-1 min-w-0' : 'w-[260px]'">
+              <InputText
+                v-model="couponCode"
+                placeholder="輸入優惠券優惠代碼"
+                @keyup.enter="applyCouponCode"
+              />
+              <Button label="使用" severity="secondary" outlined @click="applyCouponCode" />
+            </InputGroup>
+            <Button
+              :label="isMobile ? '掃描' : '掃描 QR'"
+              icon="pi pi-qrcode"
+              severity="secondary"
+              outlined
+              :class="isMobile ? 'shrink-0' : ''"
+              @click="openCouponScanner"
             />
-            <Button label="使用" severity="secondary" outlined @click="applyCouponCode" />
-          </InputGroup>
+          </div>
         </div>
       </section>
 
@@ -606,6 +633,49 @@ const totalSaved = computed(() =>
         <Button label="去付款" class="!min-h-[48px] shrink-0" :class="isMobile ? '!px-6' : 'px-16'" @click="placeOrder" />
       </div>
     </div>
+
+    <!-- ============== Coupon QR Scanner ============== -->
+    <Dialog
+      v-model:visible="couponScannerOpen"
+      modal
+      :draggable="false"
+      :style="{
+        width: isMobile ? 'calc(var(--frame-width, 100vw) - 32px)' : '360px',
+        maxWidth: isMobile ? 'calc(var(--frame-width, 100vw) - 32px)' : '360px',
+      }"
+      :pt="{
+        mask: {
+          style: 'left: var(--frame-left, 0); width: var(--frame-width, 100vw); height: calc(100vh - var(--frame-bottom, 0px))',
+        },
+        header: { style: 'padding: 16px 20px' },
+        content: { style: 'padding: 0 20px 16px' },
+        footer: { style: 'padding: 12px 20px' },
+      }"
+    >
+      <template #header>
+        <span class="font-bold text-[#020617]" style="font-size: 16px">掃描優惠券 QR</span>
+      </template>
+      <div class="flex flex-col gap-3 items-center">
+        <!-- 模擬相機畫面 -->
+        <div class="relative w-full aspect-square rounded-[12px] bg-[#0f172a] overflow-hidden flex items-center justify-center">
+          <!-- 角落 frame -->
+          <span class="absolute top-3 left-3 w-8 h-8 border-t-2 border-l-2 border-white/80 rounded-tl"></span>
+          <span class="absolute top-3 right-3 w-8 h-8 border-t-2 border-r-2 border-white/80 rounded-tr"></span>
+          <span class="absolute bottom-3 left-3 w-8 h-8 border-b-2 border-l-2 border-white/80 rounded-bl"></span>
+          <span class="absolute bottom-3 right-3 w-8 h-8 border-b-2 border-r-2 border-white/80 rounded-br"></span>
+          <!-- 掃描中間線 -->
+          <span class="absolute left-6 right-6 h-px bg-[var(--primary)] shadow-[0_0_12px_2px_var(--primary)]"></span>
+          <i class="pi pi-qrcode text-white/40" style="font-size: 64px"></i>
+        </div>
+        <p class="text-[13px] text-[#64748b] text-center">將 QR 對準畫面中央，自動辨識後即填入優惠代碼。</p>
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <Button label="取消" severity="secondary" outlined @click="couponScannerOpen = false" />
+          <Button label="模擬掃描成功" icon="pi pi-check" @click="fakeScanResult" />
+        </div>
+      </template>
+    </Dialog>
 
     <!-- ============== Coupon Drawer ============== -->
     <Transition name="drawer-fade">

@@ -2,6 +2,7 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MemberIcon from '../components/MemberIcon.vue'
+import MyOrdersSection from '../components/member/MyOrdersSection.vue'
 import NavBar from '../components/NavBar.vue'
 import CategoryTabs from '../components/CategoryTabs.vue'
 import { useAuthStore } from '../stores/auth'
@@ -60,7 +61,7 @@ const accountSubItems = [
 const VALID_NAVS = new Set(['orders', 'points', 'transactions', 'account', 'coupons'])
 function readTabFromRoute(): string {
   const q = route.query.tab
-  return typeof q === 'string' && VALID_NAVS.has(q) ? q : 'account'
+  return typeof q === 'string' && VALID_NAVS.has(q) ? q : 'orders'
 }
 const activeNav = ref(readTabFromRoute())
 const activeSub = ref('profile')
@@ -560,30 +561,8 @@ function saveAddr() {
       <!-- Right column -->
       <div class="flex-1 min-w-0 flex flex-col gap-4">
 
-      <!-- 我的訂單 -->
-      <section v-if="activeNav === 'orders'" class="bg-white rounded-[12px] shadow-card card-pad">
-        <h2 class="text-lg font-bold text-[#020617] pb-4 border-b border-[#e2e8f0]">我的訂單</h2>
-        <div class="flex flex-col">
-          <div
-            v-for="(o, oi) in myOrders"
-            :key="o.id"
-            class="flex items-center justify-between gap-4 py-4"
-            :class="oi !== myOrders.length - 1 ? 'border-b border-[#e2e8f0]' : ''"
-          >
-            <div class="min-w-0">
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="text-sm font-medium text-[#334155]">{{ o.id }}</span>
-                <span class="px-2 py-0.5 rounded text-[12px] font-medium text-white" :style="{ background: orderStatusColor[o.status] }">{{ o.status }}</span>
-              </div>
-              <p class="text-xs text-[#64748b] mt-1">{{ o.date }}　共 {{ o.items }} 件商品</p>
-            </div>
-            <div class="text-right shrink-0">
-              <p class="text-base font-bold" style="color: var(--primary)">${{ o.total.toLocaleString() }}</p>
-              <Button label="查看明細" link size="small" class="!p-0 mt-1" @click="ui.toast('訂單明細開發中')" />
-            </div>
-          </div>
-        </div>
-      </section>
+      <!-- 我的訂單（對齊 Figma 設計） -->
+      <MyOrdersSection v-if="activeNav === 'orders'" />
 
       <!-- 紅利點數 -->
       <template v-else-if="activeNav === 'points'">

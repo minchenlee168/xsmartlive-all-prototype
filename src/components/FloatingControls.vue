@@ -40,10 +40,10 @@ const open = ref(false)
               v-for="vp in viewports"
               :key="vp.id"
               class="flex-1 flex flex-col items-center justify-center gap-1 min-h-[48px] py-2 rounded-xl text-xs font-medium transition-all border"
-              :style="viewportStore.current.id === vp.id
+              :style="viewportStore.userSelection.id === vp.id
                 ? { background: 'var(--primary-bg)', borderColor: 'var(--primary)', color: '#fff' }
                 : {}"
-              :class="viewportStore.current.id !== vp.id
+              :class="viewportStore.userSelection.id !== vp.id
                 ? 'border-[#e2e8f0] text-[#334155] hover:border-[var(--primary)] hover:text-[var(--primary)]'
                 : ''"
               @click="viewportStore.set(vp)"
@@ -53,8 +53,8 @@ const open = ref(false)
               <span v-if="vp.id !== 'pc'" class="text-[9px] leading-none text-[#ef4444]">開發中</span>
             </button>
           </div>
-          <p v-if="viewportStore.current.width" class="text-xs text-[#64748b] text-center mt-1.5">
-            {{ viewportStore.current.width }}px
+          <p v-if="viewportStore.userSelection.width" class="text-xs text-[#64748b] text-center mt-1.5">
+            {{ viewportStore.userSelection.width }}px
           </p>
         </div>
 

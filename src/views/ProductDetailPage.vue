@@ -24,6 +24,22 @@ const selectedSize = ref(product.value.sizes?.[0] ?? '')
 const qty = ref(1)
 const activeThumb = ref(0)
 
+/** 組合商品：每個子品的目前選用規格；初始用該子品 spec 預設值。 */
+const bundleSelections = ref<string[]>(
+  product.value.bundleItems?.map(i => i.spec) ?? [],
+)
+
+/** 商品詳情 mock：規格表 + 介紹段落（讓所有商品都有相同詳情區塊）。 */
+const detailSpecs = computed(() => [
+  { label: '商品編號', value: `P-${String(product.value.id).padStart(5, '0')}` },
+  { label: '商品分類', value: product.value.category ?? '—' },
+  { label: '商品材質', value: '純棉 / 棉混紡' },
+  { label: '產地', value: '台灣' },
+  { label: '適用年齡', value: '0~12 歲' },
+  { label: '洗滌方式', value: '機洗 / 手洗皆可，請翻面洗滌' },
+  { label: product.value.isBundle ? '組合內容' : '尺碼資訊', value: product.value.isBundle ? `${product.value.bundleItems?.length ?? 0} 件組合` : (product.value.sizes?.join(' / ') ?? '單一尺寸') },
+])
+
 const thumbCount = computed(() => isPC.value ? 5 : isMobile.value ? 3 : 4)
 const showCouponDrawer = ref(false)
 const loginPromptOpen = ref(false)
@@ -40,9 +56,13 @@ function goLoginForCoupons() {
 }
 
 function addToCart() {
+  // 組合商品：把子品的選用規格合併成 spec 文字加進購物車
+  const specLabel = product.value.isBundle && bundleSelections.value.length > 0
+    ? bundleSelections.value.join(' / ')
+    : (selectedSize.value || '預設')
   cart.addItem(
     { id: product.value.id, name: product.value.name, price: product.value.price, original: product.value.original, image: product.value.image },
-    selectedSize.value || '預設',
+    specLabel,
     qty.value,
   )
   ui.toast('已加入購物車')
@@ -262,13 +282,21 @@ function shareTo(platform: 'facebook' | 'line' | 'instagram' | 'link') {
                 <!-- Info -->
                 <div class="flex flex-col gap-2 p-2">
                   <p class="text-[#020617] leading-snug line-clamp-2" :class="isPC ? 'text-[16px]' : 'text-sm'">{{ item.name }}</p>
-                  <div class="flex flex-col gap-1 text-sm text-[#334155]">
-                    <div class="flex gap-4">
-                      <span>規格</span>
-                      <span>{{ item.spec }}</span>
+                  <div class="flex flex-col gap-1.5 text-sm text-[#334155]">
+                    <!-- 規格：specOptions 存在 → 下拉可選；否則維持文字 -->
+                    <div class="flex items-center gap-2">
+                      <span class="shrink-0 text-[#64748b]">規格</span>
+                      <Select
+                        v-if="item.specOptions?.length"
+                        v-model="bundleSelections[idx]"
+                        :options="item.specOptions"
+                        size="small"
+                        class="flex-1"
+                      />
+                      <span v-else>{{ item.spec }}</span>
                     </div>
                     <div class="flex gap-4">
-                      <span>數量</span>
+                      <span class="text-[#64748b]">數量</span>
                       <span>{{ item.qty }}</span>
                     </div>
                   </div>
@@ -278,6 +306,109 @@ function shareTo(platform: 'facebook' | 'line' | 'instagram' | 'link') {
           </div>
 
           </div><!-- /flex-col gap-6 -->
+        </div>
+
+        <!-- 商品詳情區塊（所有尺寸都顯示，參照蝦皮 / MOMO 排版） -->
+        <div class="bg-white rounded-xl shadow-[0px_1px_2px_rgba(0,0,0,0.1),0px_1px_3px_rgba(0,0,0,0.1)] overflow-hidden">
+          <!-- Header -->
+          <div
+            class="flex items-center px-4 py-3 border-b-2"
+            style="background: color-mix(in srgb, var(--primary) 8%, transparent); border-color: var(--primary)"
+          >
+            <span class="font-semibold text-[#334155]" :class="isPC ? 'text-[18px]' : 'text-base'">商品詳情</span>
+          </div>
+
+          <div class="flex flex-col" :class="isPC ? 'gap-6 p-6' : 'gap-4 p-4'">
+            <!-- 規格表 -->
+            <section class="flex flex-col gap-2">
+              <h3 class="font-bold text-[#020617]" :class="isPC ? 'text-[16px]' : 'text-sm'">商品規格</h3>
+              <div
+                class="grid border border-[#e2e8f0] rounded-md overflow-hidden"
+                :class="isPC ? 'grid-cols-2' : 'grid-cols-1'"
+              >
+                <div
+                  v-for="(s, i) in detailSpecs"
+                  :key="s.label"
+                  class="flex border-b border-[#e2e8f0] last:border-b-0"
+                  :class="isPC && i % 2 === 0 ? 'border-r' : ''"
+                >
+                  <span class="shrink-0 px-3 py-2 text-sm text-[#64748b] bg-[#f7f7f7] w-[110px]">{{ s.label }}</span>
+                  <span class="px-3 py-2 text-sm text-[#334155] flex-1 break-words">{{ s.value }}</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- 商品介紹（圖文交錯） -->
+            <section class="flex flex-col gap-3">
+              <h3 class="font-bold text-[#020617]" :class="isPC ? 'text-[16px]' : 'text-sm'">商品介紹</h3>
+              <div class="flex flex-col gap-4 text-sm leading-relaxed text-[#334155]">
+
+                <!-- 大圖 1：情境照 -->
+                <figure class="flex flex-col gap-2">
+                  <div class="w-full rounded-lg overflow-hidden bg-[#f1f5f9]" :class="isPC ? 'aspect-[16/9]' : 'aspect-[4/3]'">
+                    <img
+                      src="https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=1200&fit=crop"
+                      alt="情境照"
+                      class="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                  <figcaption class="text-xs text-[#64748b] text-center">情境穿搭 ｜ 柔軟有機棉，親膚不刺激</figcaption>
+                </figure>
+
+                <p>本款商品採用親膚棉質面料，柔軟透氣，適合寶寶嬌嫩肌膚日常穿著；版型寬鬆舒適，不悶熱、不勒身。</p>
+
+                <!-- 雙圖：細節 -->
+                <div class="grid grid-cols-2 gap-3">
+                  <figure class="flex flex-col gap-1.5">
+                    <div class="aspect-square rounded-lg overflow-hidden bg-[#f1f5f9]">
+                      <img
+                        src="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=800&fit=crop"
+                        alt="細節照 1"
+                        class="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                    <figcaption class="text-xs text-[#64748b] text-center">細節 ｜ 無骨縫合，柔軟貼身</figcaption>
+                  </figure>
+                  <figure class="flex flex-col gap-1.5">
+                    <div class="aspect-square rounded-lg overflow-hidden bg-[#f1f5f9]">
+                      <img
+                        src="https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?w=800&fit=crop"
+                        alt="細節照 2"
+                        class="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                    <figcaption class="text-xs text-[#64748b] text-center">壓扣 ｜ 優質防滑、穿脫順手</figcaption>
+                  </figure>
+                </div>
+
+                <p>細節做工嚴謹：採用無骨縫合與包邊處理，搭配防滑壓扣與優質鬆緊帶，穿脫順手、不勒紅小手腳。</p>
+
+                <ul class="list-disc pl-5 flex flex-col gap-1">
+                  <li>親膚透氣，四季可穿，適合 0~12 歲。</li>
+                  <li>環保染色，無甲醛無熒光劑，敏感肌也安心。</li>
+                  <li>機洗手洗皆可，不易掉色變形。</li>
+                </ul>
+
+                <!-- 大圖 2：材質特寫 -->
+                <figure class="flex flex-col gap-2">
+                  <div class="w-full rounded-lg overflow-hidden bg-[#f1f5f9]" :class="isPC ? 'aspect-[16/9]' : 'aspect-[4/3]'">
+                    <img
+                      src="https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=1200&fit=crop"
+                      alt="材質特寫"
+                      class="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                  <figcaption class="text-xs text-[#64748b] text-center">面料特寫 ｜ 100% 純棉，柔軟舒適</figcaption>
+                </figure>
+
+                <p class="text-xs text-[#94a3b8]">※ 因螢幕與光線差異，實物色差請以實品為準。</p>
+              </div>
+            </section>
+          </div>
         </div>
 
       </div>

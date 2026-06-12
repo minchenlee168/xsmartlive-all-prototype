@@ -12,11 +12,11 @@ const imgError = ref(false)
 
 <template>
   <div class="flex flex-col gap-4">
-    <!-- 直播公告 header with dividers -->
+    <!-- 公告 header with dividers -->
     <div class="flex items-center gap-4">
       <div class="flex-1 h-px bg-[#e2e8f0]" />
       <div class="flex items-center py-1">
-        <span class="text-[#334155] text-xl font-bold whitespace-nowrap">直播公告</span>
+        <span class="text-[#334155] text-xl font-bold whitespace-nowrap">公告</span>
       </div>
       <div class="flex-1 h-px bg-[#e2e8f0]" />
     </div>
